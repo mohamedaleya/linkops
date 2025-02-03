@@ -1,0 +1,12 @@
+services:
+  web:
+    container_name: web
+    platform: "linux/amd64"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 3066:3000
+    env_file: .env.production
+    image: "aleyaa/url-shortener:0.0.1"
