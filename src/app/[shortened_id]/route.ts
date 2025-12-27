@@ -1,26 +1,14 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === "test") {
-  prisma = {
-    shortLink: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  } as unknown as PrismaClient;
-} else {
-  prisma = new PrismaClient();
-}
 
 export async function GET(
   request: Request,
-  { params }: { params: { shortened_id: string } }
+  { params }: { params: Promise<{ shortened_id: string }> }
 ) {
   try {
+    const { shortened_id } = await params;
     const link = await prisma.shortLink.findUnique({
-      where: { shortened_id: params.shortened_id },
+      where: { shortened_id },
     });
 
     if (!link) {
@@ -28,7 +16,7 @@ export async function GET(
     }
 
     await prisma.shortLink.update({
-      where: { shortened_id: params.shortened_id },
+      where: { shortened_id },
       data: { visits: { increment: 1 } },
     });
 
@@ -40,5 +28,3 @@ export async function GET(
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
-export { prisma };

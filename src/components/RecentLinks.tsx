@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ShortLink } from "@/types/shortLink";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 async function getRecentLinks(): Promise<ShortLink[]> {
-  const prisma = new PrismaClient();
   try {
     const recentLinks = await prisma.shortLink.findMany({
       orderBy: { createdAt: "desc" },
@@ -16,8 +15,6 @@ async function getRecentLinks(): Promise<ShortLink[]> {
   } catch (error) {
     console.error("Error fetching recent links:", error);
     return [];
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

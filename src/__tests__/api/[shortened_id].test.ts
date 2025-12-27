@@ -1,8 +1,14 @@
-/**
- * @jest-environment jsdom
- */
+import { GET } from "../../app/[shortened_id]/route";
+import { prisma } from "@/lib/prisma";
 
-import { GET, prisma } from "../../app/[shortened_id]/route";
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    shortLink: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+}));
 
 describe("GET /[shortened_id]", () => {
   beforeEach(() => {
@@ -24,7 +30,9 @@ describe("GET /[shortened_id]", () => {
     });
 
     const request = new Request("http://localhost:3000/abc123");
-    const response = await GET(request, { params: { shortened_id: "abc123" } });
+    const response = await GET(request, {
+      params: Promise.resolve({ shortened_id: "abc123" }),
+    });
 
     expect(response.status).toBe(307);
     expect(response.headers.get("Location")).toBe("https://example.com");
@@ -35,7 +43,7 @@ describe("GET /[shortened_id]", () => {
 
     const request = new Request("http://localhost:3000/nonexistent");
     const response = await GET(request, {
-      params: { shortened_id: "nonexistent" },
+      params: Promise.resolve({ shortened_id: "nonexistent" }),
     });
 
     expect(response.status).toBe(404);
@@ -47,7 +55,9 @@ describe("GET /[shortened_id]", () => {
     );
 
     const request = new Request("http://localhost:3000/error");
-    const response = await GET(request, { params: { shortened_id: "error" } });
+    const response = await GET(request, {
+      params: Promise.resolve({ shortened_id: "error" }),
+    });
 
     expect(response.status).toBe(500);
   });
