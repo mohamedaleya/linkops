@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { LinkIcon } from "lucide-react";
-import { useEffect } from "react";
+import { Button } from '@/components/ui/button';
+import { LinkIcon } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function Error({
   error,
@@ -16,9 +16,9 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold flex items-center gap-2 justify-center">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="space-y-4 text-center">
+        <h1 className="flex items-center justify-center gap-2 text-4xl font-bold">
           <LinkIcon size={32} /> Error
         </h1>
         <p className="text-xl text-muted-foreground">

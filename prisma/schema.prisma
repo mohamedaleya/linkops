@@ -1,16 +1,128 @@
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model ShortLink {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  originalUrl  String
-  shortened_id String   @unique
-  visits       Int      @default(0)
-  createdAt    DateTime @default(now())
+  id             String              @id @default(cuid())
+  originalUrl    String
+  shortened_id   String              @unique
+  title          String?
+  visits         Int                 @default(0)
+  redirectType   String              @default("307")
+  isEnabled      Boolean             @default(true)
+  expiresAt      DateTime?
+  passwordHash   String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  userId         String?
+  isPublic       Boolean             @default(false)
+  clicksDaily    LinkClickDaily[]
+  geoDaily       LinkGeoDaily[]
+  referrersDaily LinkReferrerDaily[]
+  user           User?               @relation(fields: [userId], references: [id])
+
+  @@map("short_link")
+}
+
+model LinkReferrerDaily {
+  id       String    @id @default(cuid())
+  linkId   String
+  date     DateTime
+  referrer String
+  clicks   Int       @default(0)
+  link     ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date, referrer])
+  @@map("link_referrer_daily")
+}
+
+model LinkGeoDaily {
+  id      String    @id @default(cuid())
+  linkId  String
+  date    DateTime
+  country String
+  clicks  Int       @default(0)
+  link    ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date, country])
+  @@map("link_geo_daily")
+}
+
+model LinkClickDaily {
+  id     String    @id @default(cuid())
+  linkId String
+  date   DateTime
+  clicks Int       @default(0)
+  link   ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date])
+  @@map("link_click_daily")
+}
+
+model User {
+  id              String      @id
+  name            String
+  firstName       String?
+  lastName        String?
+  username        String?     @unique
+  displayUsername String?
+  email           String      @unique
+  emailVerified   Boolean
+  image           String?
+  createdAt       DateTime
+  updatedAt       DateTime
+  accounts        Account[]
+  sessions        Session[]
+  links           ShortLink[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }

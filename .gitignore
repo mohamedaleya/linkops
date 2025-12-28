@@ -27,7 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
-.env.production
+.env.prod
 .env.test
 .env
 
@@ -37,3 +37,32 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent
+.agent
+
+# deployment scripts
+docker-deploy.sh
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Playwright / Testing
+/playwright-report/
+/test-results/
+/blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini

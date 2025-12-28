@@ -1,179 +1,103 @@
-# URL Shortener
+# LinkOps 🚀
 
-A simple URL shortener built with Next.js, MongoDB, and Prisma.
+LinkOps is a professional, high-performance URL management platform designed for modern needs. It goes beyond simple shortening, offering detailed analytics, enhanced security features, and a premium user experience with a sleek, responsive design.
 
-## Overview
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat&logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat&logo=postgresql)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat&logo=redis)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat&logo=docker)](https://www.docker.com/)
 
-This project allows users to shorten long URLs and track link statistics. It features a RESTful API to create and retrieve shortened URLs, as well as an automatic redirect mechanism that increments visit counters.
+## ✨ Key Features
 
-## API Endpoints
+- **🚀 Advanced URL Shortening**: Create custom, branded aliases with support for various redirect types (301, 302, 307, etc.).
+- **📊 Robust Analytics Dashboard**:
+  - **Click Tracking**: Real-time monitoring of link engagement.
+  - **Geographic Insights**: Heatmaps and data on clicks by country.
+  - **Referrer Analysis**: Identify which platforms are driving traffic.
+  - **Time-Series Data**: Daily and cumulative click statistics.
+- **🔒 Security & Control**:
+  - **Password Protection**: Secure your links with encrypted passwords.
+  - **Expiration Dates**: Set links to automatically deactivate after a certain period.
+  - **Enable/Disable**: Instantly toggle link availability without deleting.
+- **👤 Premium User Experience**:
+  - **Better-Auth Integration**: Secure authentication via credentials or OAuth (Google, GitHub).
+  - **Advanced Profile Management**: Custom usernames, display names, and profile picture management with integrated cropping.
+  - **Responsive & Dynamic UI**: Built with Shadcn UI, Framer Motion, and support for Dark Mode.
 
-### POST /api/shorten
+## 🏗️ Architecture & Tech Stack
 
-- Creates a new shortened URL.
-- **Request Body:**
-  ```json
-  {
-    "url": "https://example.com/long-url"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "shortened_id": "abc123"
-  }
-  ```
-- **Error Responses:**
-  - 400: URL is required
-  - 409: URL has already been shortened
-  - 500: Server error
+LinkOps is built with a focus on scalability, performance, and developer experience.
 
-### GET /api/links
+### **Frontend & Backend**
 
-- Retrieves the 10 most recent shortened links.
-- **Response:**
-  ```json
-  [
-    {
-      "id": "...",
-      "originalUrl": "https://example.com",
-      "shortened_id": "abc123",
-      "visits": 0,
-      "createdAt": "2023-..."
-    }
-  ]
-  ```
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router & Server Components) for optimal performance and SEO.
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) for rapid, consistent UI development.
+- **Components**: [Shadcn UI](https://ui.shadcn.com/) (Radix UI primitives) for accessible, premium-feel components.
+- **Animations**: [Framer Motion](https://www.framer.com/motion/) for smooth layout transitions and micro-interactions.
 
-### GET /[shortened_id]
+### **Data & Infrastructure**
 
-- Redirects to the original URL and increments the visit counter.
-- If the shortened_id is invalid, redirects to the homepage.
+- **ORM**: [Prisma](https://www.prisma.io/) for type-safe database access.
+- **Primary Database**: [PostgreSQL 16](https://www.postgresql.org/) (Relational data, Users, Links, Analytics).
+- **In-Memory Store**: [Redis 7](https://redis.io/) (via `ioredis`) for high-performance rate limiting and potential caching.
+- **Auth Service**: [Better-Auth](https://better-auth.com/) for a managed-yet-flexible authentication flow.
+- **Storage**: [UploadThing](https://uploadthing.com/) for secure and easy profile image handling.
 
-## Project Structure
+### **DevOps & Deployment**
 
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── links/
-│   │   └── shorten/
-│   ├── [shortened_id]/
-│   ├── layout.tsx
-│   └── page.tsx
-├── components/
-│   ├── UrlShortener.tsx
-│   ├── RecentLinks.tsx
-│   └── RecentLinksSkeleton.tsx
-└── types/
-    └── shortLink.ts
-```
+- **Containerization**: [Docker](https://www.docker.com/) & Docker Compose for consistent environments.
+- **Deployment**: Custom automated bash scripts for building and pushing to Docker Hub, then deploying to a VPS (OVH) via SSH.
+- **Testing**:
+  - **Unit/Integration**: [Jest](https://jestjs.io/) & React Testing Library.
+  - **E2E**: [Playwright](https://playwright.dev/) for robust browser automation tests.
 
-## Setup Instructions
+## 🚀 Getting Started
 
-1. Clone the repository:
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL instance
+- Redis instance
+- UploadThing API keys
+
+### Installation & Setup
+
+1. **Clone & Install**:
 
    ```bash
-   git clone <repository-url>
-   cd url-shortener
-   ```
-
-2. Install dependencies:
-
-   ```bash
+   git clone https://github.com/mohamedaleya/linkops.git
+   cd linkops
    npm install
    ```
 
-3. Create a `.env` file in the project root with the following variables:
+2. **Environment Configuration**:
+   Create a `.env` file based on `.env.example`. Ensure you provide valid credentials for PostgreSQL, Redis, and Better-Auth.
 
-   ```
-   DATABASE_URL=your_mongodb_connection_string
-   NEXT_PUBLIC_URL=http://localhost:3000
-   ```
-
-4. Initialize Prisma:
+3. **Database Initialization**:
 
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
-5. Start the development server:
+4. **Run Development Server**:
    ```bash
    npm run dev
    ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+## 🐳 Deployment
 
-## Deployment
-
-This application is containerized using Docker and can be deployed anywhere that supports Docker containers. A live version is running at:
-
-[https://url-shortener.mohamedaleya.dev](https://url-shortener.mohamedaleya.dev)
-
-The live version is hosted on a VPS using:
-
-- Docker for containerization
-- Nginx Proxy Manager for reverse proxy
-- MongoDB Atlas for the database
-
-### Important Note About URL Length
-
-Since the application is hosted on `url-shortener.mohamedaleya.dev`, some shortened URLs may appear longer than the original URL due to the length of the subdomain itself. This is purely due to the domain name choice.
-
-For example:
-
-- Original URL: `example.com/path`
-- Shortened URL: `url-shortener.mohamedaleya.dev/abc123`
-
-With a shorter domain (like `bit.ly`), the shortened URLs would be much more concise. The URL shortening logic remains effective, but the overall URL length is affected by the hosting domain name length.
-
-### Docker Support
-
-You can run this application using Docker:
+The project includes a `docker-deploy.sh` script for automated deployment:
 
 ```bash
-# Build and run with docker-compose
-docker-compose up -d
-
-# Or build and run manually
-docker build -t url-shortener .
-docker run -p 3066:3000 -d url-shortener
+npm run deploy
 ```
 
-## Running Tests
+This builds the production image for `linux/amd64`, pushes it to Docker Hub, and triggers a pull/redeploy on the target VPS.
 
-The project includes both unit tests and end-to-end tests.
+## 📄 License
 
-### Unit Tests
-
-Run unit tests with Jest:
-
-```bash
-npm test
-```
-
-To run tests in watch mode:
-
-```bash
-npm test -- --watch
-```
-
-### End-to-End Tests
-
-Run Playwright E2E tests:
-
-```bash
-# Run E2E tests in headless mode
-npm run test:e2e
-
-# Run E2E tests with UI
-npm run test:e2e:ui
-```
-
-### Run All Tests
-
-To run both unit and E2E tests:
-
-```bash
-npm run test:all
-```
+Open-source under the MIT License. Built with ❤️ by [mohamedaleya](https://github.com/mohamedaleya).

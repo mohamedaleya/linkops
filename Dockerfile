@@ -17,6 +17,10 @@ COPY . .
 
 RUN npx prisma generate
 
+# Build argument for NEXT_PUBLIC_URL (baked into client bundle at build time)
+ARG NEXT_PUBLIC_URL
+ENV NEXT_PUBLIC_URL=$NEXT_PUBLIC_URL
+
 RUN npm run build
 
 FROM base AS runner
