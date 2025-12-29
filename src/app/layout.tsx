@@ -13,10 +13,48 @@ const outfit = Outfit({
   variable: '--font-outfit',
 });
 
-export const metadata = {
-  title: 'LinkOps - Advanced URL Management & Analytics',
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL || 'https://linkops.at'),
+  title: {
+    default: 'LinkOps - Advanced URL Management & Analytics',
+    template: '%s | LinkOps',
+  },
   description:
     'LinkOps is a professional, fast, and secure URL management platform with deep analytics and team collaboration features.',
+  keywords: [
+    'url shortener',
+    'link management',
+    'analytics',
+    'short links',
+    'branded links',
+  ],
+  authors: [{ name: 'LinkOps Team' }],
+  creator: 'LinkOps',
+  publisher: 'LinkOps',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'LinkOps',
+    title: 'LinkOps - Advanced URL Management & Analytics',
+    description:
+      'Professional URL shortening with deep analytics, custom slugs, and enterprise-grade performance.',
+    images: [
+      { url: '/og-image.png', width: 1200, height: 630, alt: 'LinkOps' },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LinkOps - Advanced URL Management & Analytics',
+    description: 'Professional URL shortening with deep analytics.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +64,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'LinkOps',
+              url: 'https://linkops.at',
+              description:
+                'Professional URL shortening and link management platform.',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+            }),
+          }}
+        />
+      </head>
       <body
         className={`${outfit.variable} flex min-h-screen flex-col font-sans`}
       >

@@ -1,9 +1,17 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import UrlShortener from '../components/UrlShortener';
 import RecentLinks from '../components/RecentLinks';
 import RecentLinksSkeleton from '@/components/RecentLinksSkeleton';
 import { Shield, Zap, Globe, BarChart3, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Shorten URLs & Track Clicks',
+  description:
+    'Create short URLs, track performance, and manage your links with deep analytics. Free and fast.',
+  alternates: { canonical: '/' },
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
