@@ -1,6 +1,6 @@
 services:
   web:
-    image: ${DOCKER_USERNAME}/linkops:latest
+    image: ghcr.io/mohamedaleya/linkops:latest
     container_name: web
     restart: always
     ports:
