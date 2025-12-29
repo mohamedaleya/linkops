@@ -142,6 +142,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
                   disabled={isLoading || isOAuthLoading !== null}
                   className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"

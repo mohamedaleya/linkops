@@ -162,7 +162,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
           <Input
             id="password"
             type="password"
-            placeholder="Optional"
+            placeholder="••••••••"
             className="h-9 text-sm"
             value={options.password}
             onChange={(e) => updateOption('password', e.target.value)}

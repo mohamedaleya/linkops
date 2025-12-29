@@ -205,7 +205,11 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-[#60A5FA] via-[#3B82F6] to-[#4F46E5] bg-clip-text text-transparent;
+  }
+
+  .logo-gradient {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #4f46e5 100%);
   }
 
   .animate-slow-fade {

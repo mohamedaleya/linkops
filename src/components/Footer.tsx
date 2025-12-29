@@ -12,7 +12,7 @@ export default function Footer() {
               href="/"
               className="mb-4 flex items-center gap-2 text-xl font-bold tracking-tight"
             >
-              <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
+              <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
                 <LinkIcon className="h-5 w-5" />
               </div>
               <span>LinkOps</span>
@@ -34,114 +34,58 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:col-span-8">
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-12 sm:gap-24 lg:col-span-8 lg:justify-end">
+            <div className="flex flex-col items-start gap-2">
               <h3 className="font-semibold tracking-tight">Product</h3>
               <Link
                 href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Features
               </Link>
               <Link
                 href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Pricing
               </Link>
               <Link
                 href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Analytics
               </Link>
               <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                href="/changelog"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Changelog
               </Link>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <h3 className="font-semibold tracking-tight">Resources</h3>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Documentation
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                API Reference
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Community
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Blog
-              </Link>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <h3 className="font-semibold tracking-tight">Company</h3>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                About
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Careers
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Contact
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Partners
-              </Link>
-            </div>
-
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col items-start gap-2">
               <h3 className="font-semibold tracking-tight">Legal</h3>
               <Link
                 href="/privacy"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Privacy
               </Link>
               <Link
                 href="/terms"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Terms
               </Link>
               <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                href="/security"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Security
               </Link>
               <Link
-                href="#"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                href="/cookies"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Cookies
               </Link>

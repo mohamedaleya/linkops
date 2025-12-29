@@ -636,6 +636,8 @@ export default function ProfilePage() {
                     isLoading ||
                     !isDirty ||
                     isCheckingUsername ||
+                    (username !== originalValues.username &&
+                      usernameAvailability === null) ||
                     (usernameAvailability !== null &&
                       !usernameAvailability.available)
                   }
@@ -726,6 +728,7 @@ export default function ProfilePage() {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
                     required
                     className="pr-10"
                   />
@@ -759,6 +762,7 @@ export default function ProfilePage() {
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
                   className="pr-10"
                 />
@@ -793,6 +797,7 @@ export default function ProfilePage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
                   className="pr-10"
                 />

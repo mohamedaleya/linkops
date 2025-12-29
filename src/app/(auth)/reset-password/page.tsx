@@ -148,6 +148,7 @@ function ResetPasswordContent() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
                     required
                     className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
                   />
@@ -178,6 +179,7 @@ function ResetPasswordContent() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
                     required
                     className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
                   />

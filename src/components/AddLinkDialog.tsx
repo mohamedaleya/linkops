@@ -315,7 +315,7 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter a password"
+                        placeholder="••••••••"
                       />
                     </div>
 

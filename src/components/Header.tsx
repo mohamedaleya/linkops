@@ -7,7 +7,6 @@ import {
   User as UserIcon,
   LayoutDashboard,
   Home,
-  Sparkles,
   Settings,
   Menu,
 } from 'lucide-react';
@@ -25,11 +24,9 @@ import {
 import { UserAvatar } from './UserAvatar';
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu';
 import { cn } from '@/lib/utils';
@@ -55,7 +52,7 @@ const Header = () => {
           href="/"
           className="flex items-center gap-2 text-xl font-bold tracking-tight transition-opacity hover:opacity-90"
         >
-          <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
+          <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
             <LinkIcon className="h-5 w-5" />
           </div>
           <span>LinkOps</span>
@@ -77,7 +74,7 @@ const Header = () => {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
+              {/* <NavigationMenuItem>
                 <NavigationMenuTrigger className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
                   Features
@@ -112,7 +109,7 @@ const Header = () => {
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
-              </NavigationMenuItem>
+              </NavigationMenuItem> */}
 
               <NavigationMenuItem>
                 <NavigationMenuLink
@@ -225,7 +222,7 @@ const Header = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[350px]">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2 text-left">
-                  <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
+                  <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
                     <LinkIcon className="h-4 w-4" />
                   </div>
                   LinkOps
@@ -249,8 +246,7 @@ const Header = () => {
                   Dashboard
                 </Link>
 
-                {/* Features Section */}
-                <div className="px-3 py-2">
+                {/* <div className="px-3 py-2">
                   <div className="mb-3 flex items-center gap-3 text-base font-medium">
                     <Sparkles className="h-5 w-5" />
                     Features
@@ -278,7 +274,7 @@ const Header = () => {
                       Custom Links
                     </Link>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Divider */}
                 <div className="my-2 h-px bg-border" />

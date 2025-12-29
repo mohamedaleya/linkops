@@ -126,7 +126,8 @@ export default function UrlShortener() {
                   size="icon"
                   className={cn(
                     'h-8 w-8 transition-all',
-                    isAdvancedOpen && '!bg-primary/50 text-primary'
+                    isAdvancedOpen &&
+                      'bg-primary/10 hover:bg-primary/20 text-primary'
                   )}
                   onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
                   title="Advanced settings"

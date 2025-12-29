@@ -14,6 +14,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import {
+  ArrowUp,
+  ArrowDown,
   ArrowUpDown,
   ChevronDown,
   MoreHorizontal,
@@ -31,6 +33,7 @@ import {
   Link2Off,
   Plus,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { AddLinkDialog } from './AddLinkDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -168,16 +171,28 @@ export const columns: ColumnDef<LinkData>[] = [
   },
   {
     accessorKey: 'isEnabled',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="px-0 underline-offset-4 hover:bg-transparent hover:underline"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Status
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          className={cn(
+            'px-0 underline-offset-4 hover:bg-transparent hover:underline',
+            isSorted && 'text-primary hover:text-primary'
+          )}
+          onClick={() => column.toggleSorting(isSorted === 'asc')}
+        >
+          Status
+          {isSorted === 'asc' ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : isSorted === 'desc' ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const isEnabled = row.original.isEnabled;
       const expiresAt = row.original.expiresAt;
@@ -197,16 +212,28 @@ export const columns: ColumnDef<LinkData>[] = [
   },
   {
     accessorKey: 'isPublic',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="px-0 underline-offset-4 hover:bg-transparent hover:underline"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Visibility
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          className={cn(
+            'px-0 underline-offset-4 hover:bg-transparent hover:underline',
+            isSorted && 'text-primary hover:text-primary'
+          )}
+          onClick={() => column.toggleSorting(isSorted === 'asc')}
+        >
+          Visibility
+          {isSorted === 'asc' ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : isSorted === 'desc' ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const isPublic = row.original.isPublic;
       return (
@@ -239,32 +266,56 @@ export const columns: ColumnDef<LinkData>[] = [
   },
   {
     accessorKey: 'visits',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="px-0 underline-offset-4 hover:bg-transparent hover:underline"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Visits
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          className={cn(
+            'px-0 underline-offset-4 hover:bg-transparent hover:underline',
+            isSorted && 'text-primary hover:text-primary'
+          )}
+          onClick={() => column.toggleSorting(isSorted === 'asc')}
+        >
+          Visits
+          {isSorted === 'asc' ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : isSorted === 'desc' ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => (
       <div className="font-mono">{row.getValue('visits')}</div>
     ),
   },
   {
     accessorKey: 'createdAt',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        className="px-0 underline-offset-4 hover:bg-transparent hover:underline"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Created
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          className={cn(
+            'px-0 underline-offset-4 hover:bg-transparent hover:underline',
+            isSorted && 'text-primary hover:text-primary'
+          )}
+          onClick={() => column.toggleSorting(isSorted === 'asc')}
+        >
+          Created
+          {isSorted === 'asc' ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : isSorted === 'desc' ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       return (
         <div className="whitespace-nowrap text-[10px] text-muted-foreground md:text-xs">
