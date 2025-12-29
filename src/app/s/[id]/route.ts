@@ -37,21 +37,24 @@ export async function GET(
       where: { shortened_id },
     });
 
+    // Use NEXT_PUBLIC_URL for production redirects to avoid 0.0.0.0 hostname issues
+    const baseUrl = process.env.NEXT_PUBLIC_URL || request.url;
+
     if (!link) {
       // Redirect to link-not-found page for invalid shortened URLs
-      return NextResponse.redirect(new URL('/link-not-found', request.url));
+      return NextResponse.redirect(new URL('/link-not-found', baseUrl));
     }
 
     // Security & Expiration Checks
     if (!link.isEnabled) {
       return NextResponse.redirect(
-        new URL(`/link-error?type=disabled`, request.url)
+        new URL(`/link-error?type=disabled`, baseUrl)
       );
     }
 
     if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
       return NextResponse.redirect(
-        new URL(`/link-error?type=expired`, request.url)
+        new URL(`/link-error?type=expired`, baseUrl)
       );
     }
 
@@ -62,9 +65,7 @@ export async function GET(
       const verifiedKey = `verified_${link.shortened_id}=true`;
 
       if (!cookieStore.includes(verifiedKey)) {
-        return NextResponse.redirect(
-          new URL(`/p/${shortened_id}`, request.url)
-        );
+        return NextResponse.redirect(new URL(`/p/${shortened_id}`, baseUrl));
       }
     }
 

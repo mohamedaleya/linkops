@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LinkIcon, Twitter, Github, Linkedin } from 'lucide-react';
+import { LinkIcon, Github } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 export default function Footer() {
@@ -23,31 +23,13 @@ export default function Footer() {
             </p>
             <div className="flex gap-4">
               <Link
-                href="https://twitter.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Twitter className="h-5 w-5" />
-                <span className="sr-only">Twitter</span>
-              </Link>
-              <Link
-                href="https://github.com"
+                href="https://github.com/mohamedaleya/linkops"
                 target="_blank"
                 rel="noreferrer"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Github className="h-5 w-5" />
                 <span className="sr-only">GitHub</span>
-              </Link>
-              <Link
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Linkedin className="h-5 w-5" />
-                <span className="sr-only">LinkedIn</span>
               </Link>
             </div>
           </div>

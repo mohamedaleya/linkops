@@ -50,8 +50,6 @@ export default function PasswordPage() {
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_40%_at_50%_50%,oklch(0.8348_0.1302_160.9080/0.1),transparent)]" />
-
       <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="pb-2 text-center">
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">

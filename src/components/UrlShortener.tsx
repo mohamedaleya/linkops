@@ -79,6 +79,7 @@ export default function UrlShortener() {
       if (data.shortened_id) {
         setShortenedId(data.shortened_id);
         setUrl('');
+        setIsAdvancedOpen(false);
         toast.success('URL shortened successfully!');
         router.refresh();
       }
