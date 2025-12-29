@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function ChangelogPage() {
   const updates = [
     {
-      version: 'v1.2.0',
+      version: 'v0.1.0-alpha.1',
       date: 'December 29, 2025',
       title: 'UI Enhancements & Security Fixes',
       items: [
@@ -26,7 +26,7 @@ export default function ChangelogPage() {
       color: 'text-primary',
     },
     {
-      version: 'v1.1.0',
+      version: 'v0.1.0-alpha.0',
       date: 'December 28, 2025',
       title: 'Automated Deployment & Branding',
       items: [
@@ -40,7 +40,7 @@ export default function ChangelogPage() {
       color: 'text-emerald-500',
     },
     {
-      version: 'v1.0.0',
+      version: 'v0.0.1-alpha',
       date: 'December 27, 2025',
       title: 'Initial Release',
       items: [
@@ -92,9 +92,9 @@ export default function ChangelogPage() {
 
               <ul className="grid gap-2 text-muted-foreground">
                 {update.items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="bg-primary/40 mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />
-                    <span>{item}</span>
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="bg-primary/60 outline-primary/10 mt-2.5 h-1 w-1 shrink-0 rounded-full outline outline-4" />
+                    <span className="text-[15px] leading-relaxed">{item}</span>
                   </li>
                 ))}
               </ul>

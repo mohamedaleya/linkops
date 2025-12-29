@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LinkIcon, Github } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { version } from '../../package.json';
 
 export default function Footer() {
   return (
@@ -100,7 +101,15 @@ export default function Footer() {
             © {new Date().getFullYear()} LinkOps. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground/60 text-xs font-medium uppercase tracking-wider">
+                Version
+              </span>
+              <span className="text-sm font-semibold text-muted-foreground">
+                v{version}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
               <span className="text-sm font-medium text-muted-foreground">
