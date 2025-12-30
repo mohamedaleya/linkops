@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { DisabledSwitchWrapper } from '@/components/ui/disabled-switch-wrapper';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Info,
@@ -19,7 +20,11 @@ import {
   ArrowRightLeft,
   Lock,
   Target,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -34,6 +39,8 @@ import {
   ItemDescription,
   ItemActions,
 } from '@/components/ui/item';
+import { useEncryption } from '@/context/EncryptionContext';
+import { ShieldAlert, ShieldCheck } from 'lucide-react';
 
 interface AdvancedOptions {
   customSlug: string;
@@ -52,12 +59,21 @@ interface Props {
 }
 
 export default function AdvancedOptionsFields({ options, setOptions }: Props) {
+  const { isEncryptionEnabled, isKeyUnlocked } = useEncryption();
   const updateOption = <K extends keyof AdvancedOptions>(
     key: K,
     value: AdvancedOptions[K]
   ) => {
     setOptions({ ...options, [key]: value });
   };
+
+  useEffect(() => {
+    if (options.password && options.isPublic) {
+      setOptions({ ...options, isPublic: false });
+    }
+  }, [options.password, options.isPublic, options, setOptions]);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-6 py-2">
@@ -69,7 +85,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
             Custom Slug
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Info className="h-3 w-3 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
@@ -114,7 +130,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
                   <Info className="h-3 w-3 cursor-help text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] p-3 text-xs leading-relaxed">
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-left">
                     <p>
                       <span className="font-bold">301 Permanent:</span> Best for
                       SEO. Tells browsers to cache the URL indefinitely.
@@ -148,6 +164,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
               <SelectItem value="301">301 (Permanent)</SelectItem>
               <SelectItem value="302">302 (Found)</SelectItem>
               <SelectItem value="307">307 (Temporary)</SelectItem>
+              <SelectItem value="308">308 (Permanent)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -159,14 +176,35 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />
             Password
           </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="h-9 text-sm"
-            value={options.password}
-            onChange={(e) => updateOption('password', e.target.value)}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              name="link-protection-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              className="h-9 pr-10 text-sm"
+              value={options.password}
+              onChange={(e) => updateOption('password', e.target.value)}
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore
+              data-form-type="other"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -174,32 +212,80 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
       <Item
         variant="outline"
         size="sm"
-        className="bg-muted/20 border-muted-foreground/10"
+        className={cn(
+          'border-muted-foreground/10 bg-muted/20 transition-opacity',
+          !!options.password && 'opacity-60'
+        )}
       >
         <ItemMedia className="pt-0">
-          <div className="border-muted-foreground/10 rounded-lg border bg-background p-1.5 transition-transform">
+          <div className="rounded-lg border border-muted-foreground/10 bg-background p-1.5 transition-transform">
             <Globe className="h-3.5 w-3.5 text-primary" />
           </div>
         </ItemMedia>
         <ItemContent>
           <div className="flex items-center gap-1.5">
             <ItemTitle className="cursor-pointer text-xs font-medium">
-              <Label htmlFor="isPublic" className="cursor-pointer">
+              <Label
+                htmlFor="isPublic"
+                className="flex cursor-pointer items-center gap-1.5"
+              >
                 Public Link
+                {!!options.password && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Password-protected links must be private</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {isEncryptionEnabled && isKeyUnlocked && options.isPublic && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <ShieldAlert className="h-3 w-3 text-amber-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          End-to-end encryption is disabled for public links
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {isEncryptionEnabled && isKeyUnlocked && !options.isPublic && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <ShieldCheck className="h-3 w-3 text-green-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>End-to-end encryption is active</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </Label>
             </ItemTitle>
           </div>
           <ItemDescription className="text-[0.65rem] leading-tight">
-            Share this link publicly in the community feed.
+            {isEncryptionEnabled && isKeyUnlocked && options.isPublic
+              ? 'Public links cannot be end-to-end encrypted.'
+              : 'Share this link publicly in the community feed.'}
           </ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Switch
+          <DisabledSwitchWrapper
             id="isPublic"
+            disabled={!!options.password}
             checked={options.isPublic}
             onCheckedChange={(checked: boolean) =>
               updateOption('isPublic', checked)
             }
+            disabledMessage="Password-protected links must be private."
           />
         </ItemActions>
       </Item>

@@ -11,13 +11,14 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { Shield, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Shield, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PasswordPage() {
   const { shortened_id } = useParams();
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,9 +51,9 @@ export default function PasswordPage() {
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
-      <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+      <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="pb-2 text-center">
-          <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
@@ -68,21 +69,40 @@ export default function PasswordPage() {
             <div className="group relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
-                type="password"
+                name="link-access-password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isVerifying}
-                className="border-muted-foreground/20 focus:ring-primary/40 h-12 pl-10 text-base transition-all focus:border-primary"
+                className="h-12 border-muted-foreground/20 pl-10 pr-12 text-base transition-all focus:border-primary focus:ring-primary/40"
                 autoFocus
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore
+                data-form-type="other"
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
             </div>
 
             <Button
               type="submit"
               disabled={isVerifying || !password}
-              className="shadow-primary/20 h-12 w-full text-base font-bold shadow-lg transition-all"
+              className="h-12 w-full text-base font-bold shadow-lg shadow-primary/20 transition-all"
             >
               {isVerifying ? (
                 <>

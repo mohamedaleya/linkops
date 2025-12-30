@@ -9,15 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:opacity-90',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         destructive:
-          'bg-destructive text-destructive-foreground hover:opacity-90',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         'destructive-outline':
           'border border-destructive/30 bg-background text-destructive hover:bg-red-500/15',
         'destructive-ghost': 'text-destructive hover:bg-red-500/15',
         outline:
-          'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:opacity-80',
+          'border border-border bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/90',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
       },
@@ -35,22 +36,40 @@ const buttonVariants = cva(
   }
 );
 
+import { Loader2 } from 'lucide-react';
+
 export interface ButtonProps
   extends
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    { className, variant, size, asChild = false, loading = false, ...props },
+    ref
+  ) => {
     const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
-      />
+        disabled={loading || props.disabled}
+      >
+        {asChild ? (
+          props.children
+        ) : (
+          <>
+            {loading && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-current" />
+            )}
+            {props.children}
+          </>
+        )}
+      </Comp>
     );
   }
 );

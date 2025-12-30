@@ -12,7 +12,7 @@ export default function SecurityPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-16">
       <div className="mb-12 text-center">
-        <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <ShieldCheck className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-4xl font-bold tracking-tight">Security</h1>
@@ -33,7 +33,7 @@ export default function SecurityPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-3 rounded-2xl border p-6">
-            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Lock className="h-5 w-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold">Encryption</h3>
@@ -45,7 +45,7 @@ export default function SecurityPage() {
           </div>
 
           <div className="space-y-3 rounded-2xl border p-6">
-            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Key className="h-5 w-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold">Authentication</h3>
@@ -57,7 +57,7 @@ export default function SecurityPage() {
           </div>
 
           <div className="space-y-3 rounded-2xl border p-6">
-            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Eye className="h-5 w-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold">Monitoring</h3>
@@ -69,7 +69,7 @@ export default function SecurityPage() {
           </div>
 
           <div className="space-y-3 rounded-2xl border p-6">
-            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <ShieldCheck className="h-5 w-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold">Reliability</h3>

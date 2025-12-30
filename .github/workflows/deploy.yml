@@ -1,119 +1,164 @@
 name: Build and Deploy
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+      - dev
 
 env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-    build-and-push:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "npm"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Check formatting
-              run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css}"
+      - name: Check formatting
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css}"
 
-            - name: Run lint
-              run: npm run lint
+      - name: Run lint
+        run: npm run lint
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Log in to GitHub Container Registry
-              uses: docker/login-action@v3
-              with:
-                  registry: ${{ env.REGISTRY }}
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Get package version
-              id: version
-              run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Get package version
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-            - name: Extract metadata for Docker
-              id: meta
-              uses: docker/metadata-action@v5
-              with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-                  tags: |
-                      type=raw,value=${{ steps.version.outputs.VERSION }}
-                      type=raw,value=latest
+      - name: Determine Docker Tags and Args
+        id: meta-config
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            {
+              echo "TAGS<<EOF"
+              echo "type=raw,value=${{ steps.version.outputs.VERSION }}"
+              echo "type=raw,value=latest"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_URL=${{ secrets.NEXT_PUBLIC_URL }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "TAGS=type=raw,value=staging" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_URL=https://staging.linkops.at" >> $GITHUB_OUTPUT
+          fi
 
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v5
-              with:
-                  context: .
-                  push: true
-                  platforms: linux/amd64
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
-                  build-args: |
-                      NEXT_PUBLIC_URL=${{ secrets.NEXT_PUBLIC_URL }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.meta-config.outputs.TAGS }}
 
-    deploy-to-vps:
-        needs: build-and-push
-        runs-on: ubuntu-latest
-        env:
-            FULL_IMAGE_NAME: ghcr.io/${{ github.repository }}
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_URL=${{ steps.meta-config.outputs.NEXT_PUBLIC_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-            - name: Copy docker-compose to VPS
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.VPS_IP }}
-                  username: ${{ secrets.VPS_USERNAME }}
-                  key: ${{ secrets.VPS_SSH_KEY }}
-                  source: "docker-compose.vps.yml"
-                  target: "~/linkops/"
-                  strip_components: 0
+  deploy-to-vps:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      FULL_IMAGE_NAME: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Rename docker-compose on VPS
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.VPS_IP }}
-                  username: ${{ secrets.VPS_USERNAME }}
-                  key: ${{ secrets.VPS_SSH_KEY }}
-                  script: |
-                      mv ~/linkops/docker-compose.vps.yml ~/linkops/docker-compose.yml 2>/dev/null || true
+      - name: Determine Config
+        id: deploy-config
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_OUTPUT
+            echo "REMOTE_COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.prod" >> $GITHUB_OUTPUT
+            echo "TAG=latest" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "COMPOSE_FILE=docker-compose.staging.yml" >> $GITHUB_OUTPUT
+            echo "REMOTE_COMPOSE_FILE=docker-compose.staging.yml" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.staging" >> $GITHUB_OUTPUT
+            echo "TAG=staging" >> $GITHUB_OUTPUT
+          fi
 
-            - name: Deploy to VPS
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.VPS_IP }}
-                  username: ${{ secrets.VPS_USERNAME }}
-                  key: ${{ secrets.VPS_SSH_KEY }}
-                  script: |
-                      echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Create Env File
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "${{ secrets.PRODUCTION_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "${{ secrets.STAGING_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+          fi
 
-                      cd ~/linkops
+      - name: Copy Config and Env to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }}"
+          target: "~/linkops/"
+          strip_components: 0
 
-                      # Pull the new image
-                      docker pull ghcr.io/${{ github.repository }}:latest
+      - name: Rename/Prepare docker-compose on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Ensure correct naming on remote if different
+            if [ "${{ steps.deploy-config.outputs.COMPOSE_FILE }}" != "${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }}" ]; then
+              mv ~/linkops/${{ steps.deploy-config.outputs.COMPOSE_FILE }} ~/linkops/${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} 2>/dev/null || true
+            fi
 
-                      # Restart containers with fresh pull and recreation
-                      docker compose up -d --force-recreate
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-                      # Clean up old images
-                      docker image prune -f
+            cd ~/linkops
+
+            # Pull the new image
+            docker pull ghcr.io/${{ github.repository }}:${{ steps.deploy-config.outputs.TAG }}
+
+            # Restart containers
+            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up -d --force-recreate
+
+            # Run database migrations
+            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} exec -T web npx prisma@6.19.0 migrate deploy
+
+            # Clean up old images
+            docker image prune -f

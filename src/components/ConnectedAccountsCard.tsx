@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -38,11 +38,13 @@ interface Account {
 interface ConnectedAccountsCardProps {
   hasPassword: boolean;
   onActionComplete?: () => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export function ConnectedAccountsCard({
   hasPassword,
   onActionComplete,
+  onLoadingChange,
 }: ConnectedAccountsCardProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +53,7 @@ export function ConnectedAccountsCard({
     string | null
   >(null);
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/list-accounts');
       if (response.ok) {
@@ -62,8 +64,9 @@ export function ConnectedAccountsCard({
       console.error('Failed to fetch accounts');
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
-  };
+  }, [onLoadingChange]);
 
   useEffect(() => {
     fetchAccounts();
@@ -91,7 +94,7 @@ export function ConnectedAccountsCard({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onActionComplete]);
+  }, [onActionComplete, fetchAccounts]);
 
   const handleConnect = async (provider: 'google' | 'github') => {
     setIsActionLoading(provider);
@@ -219,7 +222,7 @@ export function ConnectedAccountsCard({
               return (
                 <div
                   key={provider.id}
-                  className="bg-card/50 flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-card"
+                  className="flex items-center justify-between rounded-lg border bg-card/50 p-4 transition-colors hover:bg-card"
                 >
                   <div className="flex items-center gap-4">
                     <div className="rounded-full bg-muted p-2">
@@ -245,16 +248,11 @@ export function ConnectedAccountsCard({
                       variant="destructive-outline"
                       size="sm"
                       onClick={() => setDisconnectingProvider(provider.id)}
-                      disabled={!!isActionLoading || isOnlyAccount}
+                      loading={isActionLoading === provider.id}
+                      disabled={isOnlyAccount}
                     >
-                      {isActionLoading === provider.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Unlink2 className="mr-2 h-4 w-4" />
-                          Disconnect
-                        </>
-                      )}
+                      <Unlink2 className="mr-2 h-4 w-4" />
+                      Disconnect
                     </Button>
                   ) : (
                     <Button
@@ -263,16 +261,10 @@ export function ConnectedAccountsCard({
                       onClick={() =>
                         handleConnect(provider.id as 'google' | 'github')
                       }
-                      disabled={!!isActionLoading}
+                      loading={isActionLoading === provider.id}
                     >
-                      {isActionLoading === provider.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Connect
-                        </>
-                      )}
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Connect
                     </Button>
                   )}
                 </div>

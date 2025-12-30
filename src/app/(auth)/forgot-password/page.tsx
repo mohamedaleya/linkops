@@ -13,7 +13,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { LinkIcon, Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { LinkIcon, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ForgotPasswordPage() {
@@ -53,11 +53,11 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-[85vh] items-center justify-center px-4">
-      <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="shadow-primary/20 rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg">
+            <div className="rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg shadow-primary/20">
               <LinkIcon className="h-6 w-6" />
             </div>
           </div>
@@ -103,29 +103,23 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 transition-all focus:border-primary"
+                    disabled={isLoading}
+                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="shadow-primary/20 h-11 w-full text-base font-bold shadow-lg transition-all"
+                loading={isLoading}
+                className="h-11 w-full text-base font-bold shadow-lg shadow-primary/20 transition-all"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending link...
-                  </>
-                ) : (
-                  'Send Reset Link'
-                )}
+                {isLoading ? 'Sending link' : 'Send Reset Link'}
               </Button>
             </form>
           )}
         </CardContent>
         {!isSubmitted && (
-          <CardFooter className="bg-muted/30 flex flex-col space-y-4 border-t p-6 text-center">
+          <CardFooter className="flex flex-col space-y-4 border-t bg-muted/30 p-6 text-center">
             <Link
               href="/login"
               className="flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline"

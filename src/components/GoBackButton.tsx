@@ -1,8 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GoBackButtonProps {
@@ -12,22 +11,20 @@ interface GoBackButtonProps {
 
 export function GoBackButton({
   className,
-  label = 'Return',
+  label = 'Back to Dashboard',
 }: GoBackButtonProps) {
   const router = useRouter();
 
   return (
-    <Button
-      variant="secondary"
-      size="sm"
+    <button
       className={cn(
-        '-ml-2 h-8 gap-1 px-2 text-muted-foreground hover:text-foreground',
+        'group inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground',
         className
       )}
       onClick={() => router.back()}
     >
-      <ChevronLeft className="h-4 w-4" />
-      <span className="text-sm font-medium">{label}</span>
-    </Button>
+      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+      <span className="underline-offset-4 group-hover:underline">{label}</span>
+    </button>
   );
 }

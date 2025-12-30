@@ -12,9 +12,13 @@ import {
   Target,
   Clock,
   ExternalLink,
+  ShieldCheck,
+  Shield,
 } from 'lucide-react';
 import { AnalyticsRangeSelector } from '@/components/AnalyticsRangeSelector';
 import { GoBackButton } from '@/components/GoBackButton';
+import { EditLinkButton } from '@/components/EditLinkButton';
+import { LinkData } from '@/components/LinksDataTable';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -43,6 +47,28 @@ async function getLinkWithStats(id: string, days: number = 30) {
 
   if (!link) return null;
 
+  // Aggregate referrers
+  const referrerMap = new Map<string, number>();
+  link.referrersDaily.forEach((r) => {
+    const referrer = r.referrer || 'Direct';
+    referrerMap.set(referrer, (referrerMap.get(referrer) || 0) + r.clicks);
+  });
+
+  const referrersaggregated = Array.from(referrerMap.entries())
+    .map(([referrer, clicks]) => ({ referrer, clicks }))
+    .sort((a, b) => b.clicks - a.clicks);
+
+  // Aggregate locations
+  const geoMap = new Map<string, number>();
+  link.geoDaily.forEach((g) => {
+    const country = g.country || 'Unknown';
+    geoMap.set(country, (geoMap.get(country) || 0) + g.clicks);
+  });
+
+  const geoAggregated = Array.from(geoMap.entries())
+    .map(([country, clicks]) => ({ country, clicks }))
+    .sort((a, b) => b.clicks - a.clicks);
+
   return {
     ...link,
     createdAt: link.createdAt.toISOString(),
@@ -52,14 +78,8 @@ async function getLinkWithStats(id: string, days: number = 30) {
       date: c.date.toISOString(),
       clicks: c.clicks,
     })),
-    referrersDaily: link.referrersDaily.map((r) => ({
-      referrer: r.referrer,
-      clicks: r.clicks,
-    })),
-    geoDaily: link.geoDaily.map((g) => ({
-      country: g.country,
-      clicks: g.clicks,
-    })),
+    referrersDaily: referrersaggregated,
+    geoDaily: geoAggregated,
   };
 }
 
@@ -88,15 +108,46 @@ export default async function LinkDetailsPage({
             {link.shortened_id}
           </h1>
           <div className="mt-2 flex items-center gap-2">
+            {link.isEncrypted ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+                <ShieldCheck className="h-3 w-3" />
+                E2E Encrypted
+              </div>
+            ) : null}
             <p className="flex items-center gap-2 text-sm italic text-muted-foreground">
               <Target className="h-3.5 w-3.5" />
-              {link.originalUrl}
+              {link.isEncrypted ? (
+                <span className="text-xs text-muted-foreground/60">
+                  Unlock vault to view destination
+                </span>
+              ) : (
+                link.originalUrl
+              )}
             </p>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-4">
           <AnalyticsRangeSelector />
           <div className="flex gap-2">
+            <EditLinkButton
+              link={
+                {
+                  id: link.id,
+                  originalUrl: link.originalUrl,
+                  shortened_id: link.shortened_id,
+                  visits: link.visits,
+                  isEnabled: link.isEnabled,
+                  expiresAt: link.expiresAt,
+                  createdAt: link.createdAt,
+                  redirectType: link.redirectType,
+                  isPublic: link.isPublic,
+                  hasPassword: !!link.passwordHash,
+                  isEncrypted: link.isEncrypted,
+                  encryptedUrl: link.encryptedUrl,
+                  encryptionIv: link.encryptionIv,
+                } as LinkData
+              }
+            />
             <Button variant="outline" asChild size="sm" className="h-9 gap-2">
               <a href={shortUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -107,7 +158,7 @@ export default async function LinkDetailsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<MousePointer2 className="h-5 w-5 text-primary" />}
           title="Total Clicks"
@@ -130,6 +181,20 @@ export default async function LinkDetailsPage({
           }
           description="When the link will stop working"
         />
+        <StatCard
+          icon={
+            link.isEncrypted ? (
+              <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+            ) : (
+              <Shield className="h-5 w-5 text-muted-foreground" />
+            )
+          }
+          title="Encryption"
+          value={link.isEncrypted ? 'E2E Encrypted' : 'Standard'}
+          description={
+            link.isEncrypted ? 'Zero-knowledge privacy' : 'URL stored on server'
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -142,7 +207,7 @@ export default async function LinkDetailsPage({
           </div>
         </div>
         <div className="space-y-6">
-          <Card className="bg-card/50 border backdrop-blur-xl">
+          <Card className="border bg-card/50 backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="text-sm font-medium">QR Code</CardTitle>
             </CardHeader>
@@ -171,7 +236,7 @@ function StatCard({
   description: string;
 }) {
   return (
-    <Card className="bg-card/50 border backdrop-blur-xl">
+    <Card className="border bg-card/50 backdrop-blur-xl">
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border bg-background">

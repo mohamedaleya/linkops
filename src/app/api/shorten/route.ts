@@ -6,6 +6,7 @@ import { rateLimit } from '@/lib/rate-limiter';
 import bcrypt from 'bcryptjs';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { checkLinkSafety } from '@/lib/services/link-safety';
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
 
   const {
     url,
+    encryptedUrl, // Base64 encrypted URL (for E2E encryption)
+    encryptionIv, // Base64 IV for decryption (for E2E encryption)
     customSlug,
     expiresAt,
     password,
@@ -48,20 +51,49 @@ export async function POST(request: Request) {
     isPublic,
   } = await request.json();
 
-  if (!url) {
+  // Determine if it's public (password protected links are forced private)
+  const finalIsPublic = !!password ? false : !!isPublic;
+
+  // For encrypted links, we don't need the plaintext URL
+  // Public links cannot be E2E encrypted
+  const isEncryptedLink = !!(
+    encryptedUrl &&
+    encryptionIv &&
+    session?.user &&
+    !finalIsPublic
+  );
+
+  // Require either plaintext URL or encrypted URL
+  if (!url && !isEncryptedLink) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
-  // Construct original URL with UTM params if present
-  let finalOriginalUrl = url;
-  try {
-    const urlObj = new URL(url);
-    if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
-    if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
-    if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
-    finalOriginalUrl = urlObj.toString();
-  } catch {
-    // Keep original if URL parsing fails (unlikely due to front-end validation)
+  // Construct original URL with UTM params if present (only for non-encrypted links)
+  let finalOriginalUrl = url || '';
+  if (url && !isEncryptedLink) {
+    try {
+      const urlObj = new URL(url);
+      if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
+      if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
+      if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
+      finalOriginalUrl = urlObj.toString();
+    } catch {
+      // Keep original if URL parsing fails (unlikely due to front-end validation)
+    }
+  }
+
+  // Safety check
+  const { isVerified, securityStatus, isHarmful } =
+    await checkLinkSafety(finalOriginalUrl);
+
+  // If harmful, force private
+  let effectiveIsPublic = finalIsPublic;
+  let safetyWarning = null;
+
+  if (isHarmful && effectiveIsPublic) {
+    effectiveIsPublic = false;
+    safetyWarning =
+      'This link has been flagged as potentially harmful and has been set to Private for your safety.';
   }
 
   try {
@@ -80,14 +112,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check if the same URL has already been shortened without complex options
-    // (Only if no custom slug and no expiry/password is provided)
-    if (!customSlug && !expiresAt && !password) {
+    // Check for duplicate URLs (only for non-encrypted, simple links)
+    if (!isEncryptedLink && !customSlug && !expiresAt && !password) {
       const existingLink = await prisma.shortLink.findFirst({
         where: {
           originalUrl: finalOriginalUrl,
           expiresAt: null,
           passwordHash: null,
+          isEncrypted: false,
         },
       });
 
@@ -104,23 +136,35 @@ export async function POST(request: Request) {
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
+    // Create the short link with encryption data if provided
     const shortLink = await prisma.shortLink.create({
       data: {
-        originalUrl: finalOriginalUrl,
+        originalUrl: isEncryptedLink ? '' : finalOriginalUrl,
         shortened_id,
         redirectType: redirectType || '307',
         isEnabled: true,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         passwordHash: hashedPassword,
         userId: session?.user.id || null,
-        isPublic: !!isPublic,
+        isPublic: effectiveIsPublic,
+        // E2E Encryption fields
+        encryptedUrl: isEncryptedLink ? encryptedUrl : null,
+        encryptionIv: isEncryptedLink ? encryptionIv : null,
+        isEncrypted: isEncryptedLink,
+        // Security fields
+        isVerified,
+        securityStatus,
       },
     });
 
     revalidatePath('/');
-    revalidatePath('/links');
+    revalidatePath('/dashboard');
 
-    return NextResponse.json({ shortened_id: shortLink.shortened_id });
+    return NextResponse.json({
+      shortened_id: shortLink.shortened_id,
+      isEncrypted: shortLink.isEncrypted,
+      safetyWarning,
+    });
   } catch (error) {
     console.error('Error creating short link:', error);
     return NextResponse.json(

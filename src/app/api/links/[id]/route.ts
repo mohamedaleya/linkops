@@ -64,23 +64,69 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { isEnabled, originalUrl, expiresAt, redirectType } =
-      await request.json();
+    const {
+      isEnabled,
+      originalUrl,
+      expiresAt,
+      redirectType,
+      isPublic,
+      password,
+      encryptedUrl,
+      encryptionIv,
+      shortened_id,
+    } = await request.json();
+
+    // If shortened_id is being changed, check for conflicts
+    if (shortened_id && shortened_id !== existingLink.shortened_id) {
+      const existingSlug = await prisma.shortLink.findUnique({
+        where: { shortened_id },
+      });
+      if (existingSlug) {
+        return NextResponse.json(
+          { error: 'This slug is already in use' },
+          { status: 409 }
+        );
+      }
+    }
+
+    let passwordHash = undefined;
+    if (password !== undefined) {
+      const bcrypt = await import('bcryptjs');
+      passwordHash = password ? await bcrypt.hash(password, 10) : null;
+    }
 
     const link = await prisma.shortLink.update({
       where: { id },
       data: {
         ...(isEnabled !== undefined && { isEnabled }),
-        ...(originalUrl && { originalUrl }),
+        ...(originalUrl !== undefined && { originalUrl }),
+        ...(shortened_id !== undefined && { shortened_id }),
         ...(expiresAt !== undefined && {
           expiresAt: expiresAt ? new Date(expiresAt) : null,
         }),
         ...(redirectType && { redirectType }),
+        ...(passwordHash !== undefined && { passwordHash }),
+        ...(encryptedUrl !== undefined && {
+          encryptedUrl,
+          isEncrypted: !!encryptedUrl,
+        }),
+        ...(encryptionIv !== undefined && { encryptionIv }),
+        ...(isPublic !== undefined && {
+          isPublic:
+            (passwordHash !== undefined
+              ? !!passwordHash
+              : !!existingLink.passwordHash) ||
+            (encryptedUrl !== undefined
+              ? !!encryptedUrl
+              : !!existingLink.isEncrypted)
+              ? false
+              : isPublic,
+        }),
       },
     });
 
     revalidatePath('/');
-    revalidatePath('/links');
+    revalidatePath('/dashboard');
 
     return NextResponse.json(link);
   } catch (err) {
@@ -122,7 +168,7 @@ export async function DELETE(
     });
 
     revalidatePath('/');
-    revalidatePath('/links');
+    revalidatePath('/dashboard');
 
     return NextResponse.json({ message: 'Link deleted' });
   } catch (err) {

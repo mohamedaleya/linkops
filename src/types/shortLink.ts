@@ -4,4 +4,6 @@ export interface ShortLink {
   shortened_id: string;
   visits: number;
   createdAt: string;
+  isVerified?: boolean;
+  securityStatus?: string;
 }

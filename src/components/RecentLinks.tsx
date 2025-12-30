@@ -17,6 +17,7 @@ async function getRecentPublicLinks(): Promise<ShortLink[]> {
       where: {
         isPublic: true,
         isEnabled: true,
+        passwordHash: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       orderBy: { createdAt: 'desc' },
@@ -26,6 +27,8 @@ async function getRecentPublicLinks(): Promise<ShortLink[]> {
       ...link,
       createdAt: link.createdAt.toISOString(),
       expiresAt: link.expiresAt ? link.expiresAt.toISOString() : null,
+      isVerified: link.isVerified,
+      securityStatus: link.securityStatus,
     }));
   } catch (error) {
     console.error('Error fetching recent links:', error);
@@ -43,10 +46,10 @@ const LinkItem = ({ link }: { link: ShortLink }) => {
   return (
     <Item
       variant="outline"
-      className="bg-card/50 group rounded-2xl border backdrop-blur-sm transition-colors"
+      className="group rounded-2xl border bg-card/50 backdrop-blur-sm transition-colors"
     >
       <ItemMedia>
-        <div className="bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-xl border text-primary shadow-inner transition-transform">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-inner transition-transform">
           <Link2 className="h-6 w-6" />
         </div>
       </ItemMedia>
@@ -60,7 +63,10 @@ const LinkItem = ({ link }: { link: ShortLink }) => {
             >
               {hostname}
             </div>
-            <VerifiedBadge />
+            <VerifiedBadge
+              isVerified={link.isVerified}
+              securityStatus={link.securityStatus}
+            />
           </div>
           <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground">
             <Clock className="h-3 w-3" />
@@ -103,8 +109,8 @@ export default async function RecentLinks() {
 
   if (links.length === 0) {
     return (
-      <div className="bg-muted/10 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-muted px-4 py-12">
-        <div className="bg-muted/20 mb-3 rounded-full p-3 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-muted bg-muted/10 px-4 py-12">
+        <div className="mb-3 rounded-full bg-muted/20 p-3 text-muted-foreground">
           <Link2 className="h-6 w-6" />
         </div>
         <p className="text-sm font-medium text-muted-foreground">

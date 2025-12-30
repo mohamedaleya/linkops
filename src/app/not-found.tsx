@@ -10,7 +10,7 @@ export default function NotFound() {
       {/* Main Content */}
       <div className="relative mx-auto max-w-lg space-y-4 text-center">
         {/* Icon */}
-        <div className="bg-primary/10 border-primary/20 mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border">
+        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
           <FileQuestion className="h-10 w-10 text-primary" />
         </div>
         {/* Message */}
@@ -38,7 +38,7 @@ export default function NotFound() {
             size="lg"
             className="min-w-[160px] gap-2"
           >
-            <Link href="/links">
+            <Link href="/dashboard">
               <Search className="h-4 w-4" />
               My Links
             </Link>

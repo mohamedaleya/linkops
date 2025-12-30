@@ -14,15 +14,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import {
-  LinkIcon,
-  Loader2,
-  Mail,
-  Lock,
-  LogIn,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { LinkIcon, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { signIn } from '@/lib/auth-client';
 
@@ -42,7 +34,7 @@ export default function LoginPage() {
       const { error } = await signIn.email({
         email,
         password,
-        callbackURL: '/links',
+        callbackURL: '/dashboard',
       });
 
       if (!error) {
@@ -83,7 +75,7 @@ export default function LoginPage() {
     try {
       await signIn.social({
         provider,
-        callbackURL: '/links',
+        callbackURL: '/dashboard',
       });
     } catch {
       toast.error(`Failed to sign in with ${provider}`);
@@ -92,11 +84,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[85vh] items-center justify-center px-4">
-      <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="shadow-primary/20 rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg">
+            <div className="rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg shadow-primary/20">
               <LinkIcon className="h-6 w-6" />
             </div>
           </div>
@@ -121,7 +113,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 transition-all focus:border-primary"
+                  className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -145,10 +137,11 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading || isOAuthLoading !== null}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -163,14 +156,12 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              disabled={isLoading || isOAuthLoading !== null}
-              className="shadow-primary/20 h-11 w-full text-base font-bold shadow-lg transition-all"
+              loading={isLoading}
+              disabled={isOAuthLoading !== null}
+              className="h-11 w-full text-base font-bold shadow-lg shadow-primary/20 transition-all"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in
-                </>
+                'Signing in'
               ) : (
                 <>
                   <LogIn className="mr-2 h-4 w-4" />
@@ -182,7 +173,7 @@ export default function LoginPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="border-muted-foreground/20 w-full border-t" />
+              <span className="w-full border-t border-muted-foreground/20" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
@@ -195,12 +186,14 @@ export default function LoginPage() {
             <Button
               variant="outline"
               onClick={() => handleOAuthSignIn('github')}
-              disabled={isLoading || isOAuthLoading !== null}
-              className="border-muted-foreground/20 h-11 transition-all hover:bg-accent"
+              loading={isOAuthLoading === 'github'}
+              disabled={
+                isLoading ||
+                (isOAuthLoading !== null && isOAuthLoading !== 'github')
+              }
+              className="h-11 border-muted-foreground/20 transition-all hover:bg-accent"
             >
-              {isOAuthLoading === 'github' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+              {!isOAuthLoading && (
                 <svg
                   className="mr-2 h-4 w-4"
                   viewBox="0 0 24 24"
@@ -214,12 +207,14 @@ export default function LoginPage() {
             <Button
               variant="outline"
               onClick={() => handleOAuthSignIn('google')}
-              disabled={isLoading || isOAuthLoading !== null}
-              className="border-muted-foreground/20 h-11 transition-all hover:bg-accent"
+              loading={isOAuthLoading === 'google'}
+              disabled={
+                isLoading ||
+                (isOAuthLoading !== null && isOAuthLoading !== 'google')
+              }
+              className="h-11 border-muted-foreground/20 transition-all hover:bg-accent"
             >
-              {isOAuthLoading === 'google' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+              {!isOAuthLoading && (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
@@ -243,7 +238,7 @@ export default function LoginPage() {
             </Button>
           </div>
         </CardContent>
-        <CardFooter className="bg-muted/30 flex flex-col space-y-4 border-t p-6 text-center">
+        <CardFooter className="flex flex-col space-y-4 border-t bg-muted/30 p-6 text-center">
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link

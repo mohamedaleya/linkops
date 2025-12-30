@@ -4,13 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,26 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  User,
-  Lock,
-  Loader2,
-  Upload,
-  AtSign,
-  Eye,
-  EyeOff,
-  Check,
-  AlertCircle,
-} from 'lucide-react';
+import { Loader2, Upload, AtSign, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  PasswordStrengthChecklist,
-  checkPasswordRequirements,
-} from '@/components/PasswordStrengthChecklist';
 import { useUploadThing } from '@/lib/uploadthing';
 import { AvatarCropDialog } from '@/components/AvatarCropDialog';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
-import { ConnectedAccountsCard } from '@/components/ConnectedAccountsCard';
 import { deleteAvatarFromStorage } from '@/app/actions/uploadthing';
 
 const getFileKey = (url: string): string | null => {
@@ -65,11 +44,8 @@ export default function ProfilePage() {
   const { data: session, isPending, refetch } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
-  const [hasPassword, setHasPassword] = useState<boolean>(true);
-  const [isHasPasswordLoading, setIsHasPasswordLoading] = useState(true);
 
   // Profile form state
   const [firstName, setFirstName] = useState('');
@@ -84,14 +60,6 @@ export default function ProfilePage() {
     username: '',
     avatar: '',
   });
-
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Username availability state
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
@@ -148,22 +116,6 @@ export default function ProfilePage() {
         avatar: img,
       });
     }
-
-    const checkHasPassword = async () => {
-      try {
-        const response = await fetch('/api/auth/has-password');
-        if (response.ok) {
-          const data = await response.json();
-          setHasPassword(data.hasPassword);
-        }
-      } catch (error: unknown) {
-        console.error('Failed to check password status:', error);
-      } finally {
-        setIsHasPasswordLoading(false);
-      }
-    };
-
-    checkHasPassword();
   }, [session]);
 
   // Handle browser back/forward/close
@@ -436,58 +388,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmNewPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-
-    if (!checkPasswordRequirements(newPassword, confirmNewPassword)) {
-      toast.error('Please meet all password requirements');
-      return;
-    }
-
-    setIsPasswordLoading(true);
-
-    try {
-      const endpoint = hasPassword
-        ? '/api/auth/change-password'
-        : '/api/auth/set-password';
-      const body = hasPassword
-        ? { currentPassword, newPassword, revokeOtherSessions: true }
-        : { newPassword };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        toast.success(
-          hasPassword
-            ? 'Password changed successfully!'
-            : 'Password set successfully!'
-        );
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmNewPassword('');
-        if (!hasPassword) setHasPassword(true);
-      } else {
-        const data = await response.json();
-        toast.error(data.error?.message || 'Failed to update password');
-      }
-    } catch {
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsPasswordLoading(false);
-    }
-  };
-
   if (isPending) {
     return (
       <div className="flex min-h-[600px] items-center justify-center">
@@ -514,7 +414,7 @@ export default function ProfilePage() {
             Profile Settings
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Manage your account information and security settings
+            Manage your public profile and avatar
           </p>
         </div>
         {isDirty && (
@@ -525,16 +425,7 @@ export default function ProfilePage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile Information
-          </CardTitle>
-          <CardDescription>
-            Update your personal information and avatar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col gap-8 md:flex-row">
             <div className="order-2 flex-1 md:order-1">
               <form onSubmit={handleProfileUpdate} className="space-y-6">
@@ -632,8 +523,8 @@ export default function ProfilePage() {
 
                 <Button
                   type="submit"
+                  loading={isLoading}
                   disabled={
-                    isLoading ||
                     !isDirty ||
                     isCheckingUsername ||
                     (username !== originalValues.username &&
@@ -642,14 +533,7 @@ export default function ProfilePage() {
                       !usernameAvailability.available)
                   }
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
+                  {isLoading ? 'Saving' : 'Save Changes'}
                 </Button>
               </form>
             </div>
@@ -659,7 +543,7 @@ export default function ProfilePage() {
                 <Label className="text-base font-medium">Profile Picture</Label>
                 <UserAvatar
                   user={{ name: `${firstName} ${lastName}`, image: avatar }}
-                  className="border-muted/20 h-36 w-36 border-4"
+                  className="h-36 w-36 border-4 border-muted/20"
                   fallbackClassName="text-4xl"
                 />
 
@@ -668,11 +552,11 @@ export default function ProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingAvatar}
+                    loading={isUploadingAvatar}
                     className="w-full"
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    {isUploadingAvatar ? 'Uploading...' : 'Upload New'}
+                    {isUploadingAvatar ? 'Uploading' : 'Upload New'}
                   </Button>
                   <Input
                     ref={fileInputRef}
@@ -698,184 +582,13 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <ConnectedAccountsCard
-        hasPassword={hasPassword}
-        onActionComplete={refetch}
-      />
-
-      <Card
-        className={isHasPasswordLoading ? 'pointer-events-none opacity-50' : ''}
-      >
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            {hasPassword ? 'Change Password' : 'Set Password'}
-          </CardTitle>
-          <CardDescription>
-            {hasPassword
-              ? 'Update your password to keep your account secure'
-              : 'Set a password to use email and password for sign-in'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePasswordChange} className="space-y-6">
-            {hasPassword && (
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <div className="relative">
-                  <Input
-                    id="currentPassword"
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className="sr-only">
-                      {showCurrentPassword ? 'Hide password' : 'Show password'}
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">
-                {hasPassword ? 'New Password' : 'Password'}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="sr-only">
-                    {showNewPassword ? 'Hide password' : 'Show password'}
-                  </span>
-                </Button>
-              </div>
-              <PasswordStrengthChecklist
-                password={newPassword}
-                confirmPassword={confirmNewPassword}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmNewPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="sr-only">
-                    {showConfirmPassword ? 'Hide password' : 'Show password'}
-                  </span>
-                </Button>
-              </div>
-              {newPassword && confirmNewPassword && (
-                <div
-                  className={cn(
-                    'flex items-center gap-1.5 text-xs font-medium transition-colors duration-300',
-                    newPassword === confirmNewPassword
-                      ? 'text-emerald-500'
-                      : 'text-amber-500'
-                  )}
-                >
-                  {newPassword === confirmNewPassword ? (
-                    <>
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Passwords match</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      <span>Passwords do not match yet</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <Button type="submit" disabled={isPasswordLoading}>
-              {isPasswordLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {hasPassword ? 'Changing Password...' : 'Setting Password...'}
-                </>
-              ) : hasPassword ? (
-                'Change Password'
-              ) : (
-                'Set Password'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <AvatarCropDialog
-        isOpen={cropDialogOpen}
-        onClose={() => {
-          setCropDialogOpen(false);
-          setImageToCrop('');
-        }}
-        imageSrc={imageToCrop}
-        onCropComplete={handleCropComplete}
-        isUploading={isUploadingAvatar}
-      />
-
       <Dialog
         open={showRemoveAvatarDialog}
         onOpenChange={setShowRemoveAvatarDialog}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Profile Picture?</DialogTitle>
+            <DialogTitle>Remove Profile Picture</DialogTitle>
             <DialogDescription>
               Are you sure you want to remove your profile picture? This action
               cannot be undone.
@@ -883,28 +596,30 @@ export default function ProfilePage() {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => setShowRemoveAvatarDialog(false)}
+              disabled={isRemovingAvatar}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleRemoveAvatar}
-              disabled={isRemovingAvatar}
+              loading={isRemovingAvatar}
             >
-              {isRemovingAvatar ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Removing...
-                </>
-              ) : (
-                'Remove'
-              )}
+              {isRemovingAvatar ? 'Removing' : 'Remove'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AvatarCropDialog
+        isOpen={cropDialogOpen}
+        onClose={() => setCropDialogOpen(false)}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+        isUploading={isUploadingAvatar}
+      />
 
       <UnsavedChangesDialog
         isOpen={showUnsavedDialog}

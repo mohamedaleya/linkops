@@ -12,11 +12,11 @@ export async function middleware(request: NextRequest) {
   const authRoutes = ['/login', '/register'];
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/links'];
+  const protectedRoutes = ['/dashboard'];
 
   // If user is logged in and trying to access auth routes, redirect to dashboard
   if (sessionCookie && authRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/links', baseUrl));
+    return NextResponse.redirect(new URL('/dashboard', baseUrl));
   }
 
   // If user is not logged in and trying to access protected routes, redirect to login
@@ -31,5 +31,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/register', '/links/:path*'],
+  matcher: ['/login', '/register', '/dashboard/:path*'],
 };

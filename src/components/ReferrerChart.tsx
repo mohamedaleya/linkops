@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-} from 'recharts';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 interface ReferrerData {
   referrer: string;
@@ -20,67 +18,56 @@ interface ReferrerChartProps {
   data: ReferrerData[];
 }
 
-const COLORS = [
-  'var(--chart-1)',
-  'var(--chart-2)',
-  'var(--chart-3)',
-  'var(--chart-4)',
-  'var(--chart-5)',
-];
+const chartConfig = {
+  clicks: {
+    label: 'Clicks',
+    color: 'oklch(var(--chart-2))',
+  },
+} satisfies ChartConfig;
 
 export function ReferrerChart({ data }: ReferrerChartProps) {
   const sortedData = [...data].sort((a, b) => b.clicks - a.clicks).slice(0, 5);
 
   return (
-    <Card className="bg-card/50 border shadow-none backdrop-blur-xl">
+    <Card className="border bg-card/50 shadow-none backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="text-sm font-medium">Top Referrers</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[200px] w-full">
           {sortedData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart
+                accessibilityLayer
                 data={sortedData}
                 layout="vertical"
-                margin={{ left: -20 }}
+                margin={{ left: 0, right: 0 }}
               >
-                <XAxis type="number" hide />
+                <XAxis type="number" dataKey="clicks" hide />
                 <YAxis
                   dataKey="referrer"
                   type="category"
-                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
                   width={100}
+                  tickFormatter={(value) =>
+                    value.length > 15 ? `${value.substring(0, 15)}...` : value
+                  }
+                  tick={{ fontSize: 12 }}
                 />
-                <Tooltip
-                  cursor={{ fill: 'transparent' }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-background/90 rounded-lg border p-2 shadow-xl backdrop-blur-md">
-                          <p className="text-xs font-medium">
-                            {payload[0].payload.referrer}
-                          </p>
-                          <p className="text-xs text-primary">
-                            {payload[0].value} clicks
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar dataKey="clicks" radius={[0, 4, 4, 0]} barSize={20}>
-                  {sortedData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                      opacity={0.8}
-                    />
-                  ))}
-                </Bar>
+                <Bar
+                  dataKey="clicks"
+                  fill="var(--color-clicks)"
+                  radius={4}
+                  barSize={20}
+                />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No referrer data yet

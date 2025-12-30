@@ -64,7 +64,7 @@ export function PasswordStrengthChecklist({
   if (!password) return null;
 
   return (
-    <div className="bg-muted/30 border-muted-foreground/10 mt-3 space-y-2 rounded-xl border p-4 backdrop-blur-sm duration-300 animate-in fade-in slide-in-from-top-2">
+    <div className="mt-3 space-y-2 rounded-xl border border-muted-foreground/10 bg-muted/30 p-4 backdrop-blur-sm duration-300 animate-in fade-in slide-in-from-top-2">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Password Requirements
       </p>
@@ -103,7 +103,7 @@ export function PasswordStrengthChecklist({
         ))}
       </div>
 
-      <div className="border-muted-foreground/10 mt-4 border-t pt-3">
+      <div className="mt-4 border-t border-muted-foreground/10 pt-3">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Security Level

@@ -10,7 +10,7 @@ export default function LinkNotFoundPage() {
       {/* Main Content */}
       <div className="relative mx-auto max-w-lg space-y-4 text-center">
         {/* Icon */}
-        <div className="bg-primary/10 border-primary/20 mx-auto flex h-20 w-20 items-center justify-center rounded-full border">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
           <LinkIcon className="h-10 w-10 text-primary" />
         </div>
 
