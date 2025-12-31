@@ -2,6 +2,11 @@
 node_modules
 npm-debug.log
 
+# Package manager lockfiles (bun.lockb is intentionally NOT ignored)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # Next.js build output
 .next
 out

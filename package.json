@@ -6,11 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "test": "jest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run test && npm run test:e2e",
+    "lint": "eslint .",
     "deploy": "bash docker-deploy.sh",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css}\"",
     "prepare": "husky"

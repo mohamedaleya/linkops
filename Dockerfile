@@ -1,30 +1,31 @@
-FROM node:20-alpine AS base
+FROM oven/bun:1-alpine AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json bun.lockb* ./
 COPY prisma ./prisma/
 
 
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npx prisma generate
+RUN bunx --bun prisma generate
 
 # Build argument for NEXT_PUBLIC_URL (baked into client bundle at build time)
 ARG NEXT_PUBLIC_URL
 ENV NEXT_PUBLIC_URL=$NEXT_PUBLIC_URL
 
-RUN npm run build
+RUN bun run build
 
-FROM base AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
+RUN apk add --no-cache curl libc6-compat
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
