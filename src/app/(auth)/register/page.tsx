@@ -17,7 +17,6 @@ import {
 import { Label } from '@/components/ui/label';
 import {
   LinkIcon,
-  Loader2,
   Mail,
   Lock,
   UserPlus,
@@ -76,7 +75,7 @@ export default function RegisterPage() {
 
       if (res.ok) {
         toast.success('Account created successfully!');
-        router.push('/links');
+        router.push('/dashboard');
         router.refresh();
       } else {
         const data = await res.json();
@@ -94,7 +93,7 @@ export default function RegisterPage() {
     try {
       await signIn.social({
         provider,
-        callbackURL: '/links',
+        callbackURL: '/dashboard',
       });
     } catch {
       toast.error(`Failed to sign in with ${provider}`);
@@ -103,11 +102,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="my-12 flex min-h-[85vh] items-center justify-center px-4">
-      <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="shadow-primary/20 rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg">
+            <div className="rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg shadow-primary/20">
               <LinkIcon className="h-6 w-6" />
             </div>
           </div>
@@ -134,7 +133,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 transition-all focus:border-primary"
+                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -151,7 +150,7 @@ export default function RegisterPage() {
                     onChange={(e) => setLastName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 transition-all focus:border-primary"
+                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -170,7 +169,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 transition-all focus:border-primary"
+                  className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -189,10 +188,11 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading || isOAuthLoading !== null}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -224,10 +224,11 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading || isOAuthLoading !== null}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -262,7 +263,7 @@ export default function RegisterPage() {
                 </div>
               )}
             </div>
-            <div className="my-6 flex items-start space-x-2">
+            <div className="flex items-center space-x-2 py-2">
               <Checkbox
                 id="terms"
                 checked={acceptTerms}
@@ -270,23 +271,22 @@ export default function RegisterPage() {
                   setAcceptTerms(checked as boolean)
                 }
                 disabled={isLoading || isOAuthLoading !== null}
-                className="mt-0.5"
               />
               <Label
                 htmlFor="terms"
                 className="text-sm font-medium leading-normal text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                I have read and agreed to the{' '}
+                I agree to the{' '}
                 <Link href="/terms" className="underline hover:text-primary">
                   Terms and Conditions
                 </Link>
-                <span className="text-red-500">*</span>.
+                . <span className="text-red-500">*</span>
               </Label>
             </div>
             <Button
               type="submit"
+              loading={isLoading}
               disabled={
-                isLoading ||
                 isOAuthLoading !== null ||
                 !firstName ||
                 !lastName ||
@@ -295,13 +295,10 @@ export default function RegisterPage() {
                 password !== confirmPassword ||
                 !acceptTerms
               }
-              className="shadow-primary/20 h-11 w-full text-base font-bold shadow-lg transition-all"
+              className="h-11 w-full text-base font-bold shadow-lg shadow-primary/20 transition-all"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account
-                </>
+                'Creating account'
               ) : (
                 <>
                   <UserPlus className="mr-2 h-4 w-4" />
@@ -313,7 +310,7 @@ export default function RegisterPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="border-muted-foreground/20 w-full border-t" />
+              <span className="w-full border-t border-muted-foreground/20" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
@@ -326,12 +323,14 @@ export default function RegisterPage() {
             <Button
               variant="outline"
               onClick={() => handleOAuthSignIn('github')}
-              disabled={isLoading || isOAuthLoading !== null}
-              className="border-muted-foreground/20 h-11 transition-all hover:bg-accent"
+              loading={isOAuthLoading === 'github'}
+              disabled={
+                isLoading ||
+                (isOAuthLoading !== null && isOAuthLoading !== 'github')
+              }
+              className="h-11 border-muted-foreground/20 transition-all hover:bg-accent"
             >
-              {isOAuthLoading === 'github' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+              {!isOAuthLoading && (
                 <svg
                   className="mr-2 h-4 w-4"
                   viewBox="0 0 24 24"
@@ -345,12 +344,14 @@ export default function RegisterPage() {
             <Button
               variant="outline"
               onClick={() => handleOAuthSignIn('google')}
-              disabled={isLoading || isOAuthLoading !== null}
-              className="border-muted-foreground/20 h-11 transition-all hover:bg-accent"
+              loading={isOAuthLoading === 'google'}
+              disabled={
+                isLoading ||
+                (isOAuthLoading !== null && isOAuthLoading !== 'google')
+              }
+              className="h-11 border-muted-foreground/20 transition-all hover:bg-accent"
             >
-              {isOAuthLoading === 'google' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+              {!isOAuthLoading && (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
@@ -385,7 +386,7 @@ export default function RegisterPage() {
             .
           </p>
         </CardContent>
-        <CardFooter className="bg-muted/30 flex flex-col space-y-4 border-t p-6 text-center">
+        <CardFooter className="flex flex-col space-y-4 border-t bg-muted/30 p-6 text-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link

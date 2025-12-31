@@ -18,7 +18,6 @@ import {
   DialogCancel,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 
 interface AvatarCropDialogProps {
   isOpen: boolean;
@@ -157,16 +156,10 @@ export function AvatarCropDialog({
           <DialogCancel disabled={isUploading}>Cancel</DialogCancel>
           <Button
             onClick={handleConfirm}
-            disabled={isUploading || !completedCrop}
+            loading={isUploading}
+            disabled={!completedCrop}
           >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              'Confirm & Upload'
-            )}
+            {isUploading ? 'Uploading' : 'Confirm & Upload'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -69,6 +69,16 @@ export async function GET(
       }
     }
 
+    // Security Check (Interstitial Warning)
+    const { searchParams } = new URL(request.url);
+    const bypass = searchParams.get('bypass') === 'true';
+
+    if (link.securityStatus === 'unsafe' && !bypass) {
+      return NextResponse.redirect(
+        new URL(`/warning/${shortened_id}`, baseUrl)
+      );
+    }
+
     // Async Analytics (for now blocking, Phase 2 will be async)
     await prisma.shortLink.update({
       where: { id: link.id },

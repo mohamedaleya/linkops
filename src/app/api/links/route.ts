@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const recentLinks = await prisma.shortLink.findMany({
-      where: { isPublic: true },
+      where: { isPublic: true, passwordHash: null },
       orderBy: { createdAt: 'desc' },
       take: 10,
     });

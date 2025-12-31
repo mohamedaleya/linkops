@@ -1,5 +1,17 @@
-import { Sparkles, CheckCircle2, Rocket, Clock } from 'lucide-react';
+import {
+  Sparkles,
+  CheckCircle2,
+  Rocket,
+  Clock,
+  Zap,
+  FileText,
+  LucideIcon,
+  ShieldCheck,
+} from 'lucide-react';
 import type { Metadata } from 'next';
+import fs from 'fs';
+import path from 'path';
+import ReactMarkdown from 'react-markdown';
 
 export const metadata: Metadata = {
   title: 'Changelog',
@@ -8,57 +20,90 @@ export const metadata: Metadata = {
   alternates: { canonical: '/changelog' },
 };
 
+type ChangelogEntry = {
+  version: string;
+  date: string;
+  title: string;
+  content: string; // Markdown content string
+  icon: LucideIcon;
+  color: string;
+};
+
+function getIconAndColor(version: string, title: string) {
+  const lowerTitle = title.toLowerCase();
+
+  // Icon based on context/title first
+  if (lowerTitle.includes('security') || lowerTitle.includes('safe'))
+    return { icon: ShieldCheck, color: 'text-emerald-500' };
+  if (lowerTitle.includes('feature'))
+    return { icon: Zap, color: 'text-yellow-500' };
+  if (lowerTitle.includes('polish') || lowerTitle.includes('refine'))
+    return { icon: Sparkles, color: 'text-primary' };
+  if (lowerTitle.includes('release'))
+    return { icon: Rocket, color: 'text-blue-500' };
+
+  // Fallback to version based logic
+  if (version.includes('beta')) return { icon: Zap, color: 'text-purple-500' };
+  if (version.includes('alpha'))
+    return { icon: CheckCircle2, color: 'text-primary' };
+
+  return { icon: FileText, color: 'text-gray-500' };
+}
+
+function getChangelogData(): ChangelogEntry[] {
+  try {
+    const filePath = path.join(process.cwd(), 'CHANGELOG.md');
+    // Normalize line endings to \n to avoid regex issues on Windows
+    const fileContent = fs
+      .readFileSync(filePath, 'utf-8')
+      .replace(/\r\n/g, '\n');
+
+    const entries: ChangelogEntry[] = [];
+    // Split by "## [" which denotes a version header
+    // The filter(Boolean) removes the empty string before the first match if file starts with headers
+    const rawBlocks = fileContent.split(/^## /m).filter(Boolean);
+
+    for (const block of rawBlocks) {
+      // First line is the header: [0.1.0-beta.2] - 2025-12-30 - Title
+      // Remaining is content
+      const lines = block.split('\n');
+      const headerLine = lines[0];
+      const content = lines.slice(1).join('\n').trim();
+
+      // Parse header: [Version] - Date - Title
+      // Regex: \[ (version) \] - (date) - (title)
+      const headerRegex = /^\[(.*?)\] - (.*?) - (.*)$/;
+      const match = headerLine.match(headerRegex);
+
+      if (match) {
+        const [, version, date, title] = match;
+        const { icon, color } = getIconAndColor(version, title);
+
+        entries.push({
+          version,
+          date,
+          title,
+          content,
+          icon,
+          color,
+        });
+      }
+    }
+
+    return entries;
+  } catch (error) {
+    console.error('Failed to read CHANGELOG.md', error);
+    return [];
+  }
+}
+
 export default function ChangelogPage() {
-  const updates = [
-    {
-      version: 'v0.1.0-alpha.1',
-      date: 'December 29, 2025',
-      title: 'UI Enhancements & Security Fixes',
-      items: [
-        'Added visual sorting indicators to dashboard tables.',
-        'Improved password field security with masked placeholders.',
-        'Refined username availability check logic in profile settings.',
-        'Enhanced advanced configuration UI with distinct active states.',
-        'Cleaned up navigation and footer for a more focused experience.',
-        'Added comprehensive legal and security documentation.',
-      ],
-      icon: Sparkles,
-      color: 'text-primary',
-    },
-    {
-      version: 'v0.1.0-alpha.0',
-      date: 'December 28, 2025',
-      title: 'Automated Deployment & Branding',
-      items: [
-        'Officially renamed project to LinkOps.',
-        'Implemented GitHub Actions for automated CI/CD deployment.',
-        'Standardized modal and dialog styles across the application.',
-        'Added support for custom slugs and advanced redirect types.',
-        'Improved avatar management and storage handling.',
-      ],
-      icon: Rocket,
-      color: 'text-emerald-500',
-    },
-    {
-      version: 'v0.0.1-alpha',
-      date: 'December 27, 2025',
-      title: 'Initial Release',
-      items: [
-        'Core URL shortening functionality.',
-        'User authentication and profile management.',
-        'Dashboard for managing saved links.',
-        'Real-time click analytics and visit tracking.',
-        'Responsive design for mobile and desktop.',
-      ],
-      icon: CheckCircle2,
-      color: 'text-blue-500',
-    },
-  ];
+  const updates = getChangelogData();
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-16">
       <div className="mb-12 text-center">
-        <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <Clock className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-4xl font-bold tracking-tight">Changelog</h1>
@@ -90,14 +135,40 @@ export default function ChangelogPage() {
                 </time>
               </div>
 
-              <ul className="grid gap-2 text-muted-foreground">
-                {update.items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="bg-primary/60 outline-primary/10 mt-2.5 h-1 w-1 shrink-0 rounded-full outline outline-4" />
-                    <span className="text-[15px] leading-relaxed">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground">
+                <ReactMarkdown
+                  components={{
+                    h3: ({ node, ...props }) => (
+                      <h3
+                        className="mb-2 mt-4 text-base font-semibold text-foreground"
+                        {...props}
+                      />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul className="grid gap-2" {...props} />
+                    ),
+                    li: ({ node, children, ...props }) => (
+                      <li className="flex items-start gap-3" {...props}>
+                        <div className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-primary/60 outline outline-4 outline-primary/10" />
+                        <span className="text-[15px] leading-relaxed">
+                          {children}
+                        </span>
+                      </li>
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p className="leading-relaxed" {...props} />
+                    ),
+                    strong: ({ node, ...props }) => (
+                      <strong
+                        className="font-medium text-foreground"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {update.content}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         ))}

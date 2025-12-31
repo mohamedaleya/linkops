@@ -1,7 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 
 const LinkCardSkeleton = () => (
-  <div className="bg-card/50 flex items-start gap-4 rounded-2xl border p-4">
+  <div className="flex items-start gap-4 rounded-2xl border bg-card/50 p-4">
     {/* Icon placeholder */}
     <Skeleton className="h-12 w-12 shrink-0 rounded-xl" />
 

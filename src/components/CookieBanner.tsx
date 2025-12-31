@@ -119,7 +119,7 @@ export default function CookieBanner() {
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6"
           >
-            <div className="bg-card/95 supports-[backdrop-filter]:bg-card/85 mx-auto flex max-w-5xl flex-col items-center gap-6 rounded-xl border border-border p-4 shadow-2xl backdrop-blur md:flex-row md:p-6">
+            <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 rounded-xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/85 md:flex-row md:p-6">
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                   <Cookie className="h-5 w-5 text-primary" />

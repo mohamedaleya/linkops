@@ -26,7 +26,7 @@ export function AnalyticsRangeSelector() {
         Time Range
       </span>
       <Select defaultValue={currentRange} onValueChange={handleRangeChange}>
-        <SelectTrigger className="border-muted-foreground/20 h-9 w-[160px]">
+        <SelectTrigger className="h-9 w-[160px] border-muted-foreground/20">
           <SelectValue placeholder="Select range" />
         </SelectTrigger>
         <SelectContent>

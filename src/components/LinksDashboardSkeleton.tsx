@@ -8,7 +8,7 @@ export default function LinksDashboardSkeleton() {
         <Skeleton className="h-10 w-24 rounded-lg" />
       </div>
       <div className="overflow-hidden rounded-2xl border">
-        <div className="bg-muted/30 flex h-12 items-center gap-4 border-b px-4">
+        <div className="flex h-12 items-center gap-4 border-b bg-muted/30 px-4">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-16" />

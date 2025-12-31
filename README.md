@@ -13,15 +13,21 @@ LinkOps is a professional, high-performance URL management platform designed for
 ## ✨ Key Features
 
 - **🚀 Advanced URL Shortening**: Create custom, branded aliases with support for various redirect types (301, 302, 307, etc.).
-- **📊 Robust Analytics Dashboard**:
+- **📊 Unified Dashboard**: A central place to manage all your links, view real-time statistics, and monitor engagement.
   - **Click Tracking**: Real-time monitoring of link engagement.
   - **Geographic Insights**: Heatmaps and data on clicks by country.
   - **Referrer Analysis**: Identify which platforms are driving traffic.
   - **Time-Series Data**: Daily and cumulative click statistics.
 - **🔒 Security & Control**:
   - **Password Protection**: Secure your links with encrypted passwords.
+  - **Premium End-to-End Encryption**: Zero-knowledge storage for link destinations using AES-256 (Private links only).
+  - **Safety Warning**: Interstitial warning for potentially unsafe links.
   - **Expiration Dates**: Set links to automatically deactivate after a certain period.
   - **Enable/Disable**: Instantly toggle link availability without deleting.
+- **📄 Informational Pages**:
+  - **Features**: Detailed overview of platform capabilities.
+  - **Contact**: Direct line of communication for users.
+  - **Pricing**: Transparent pricing information (Currently Free).
 - **👤 Premium User Experience**:
   - **Better-Auth Integration**: Secure authentication via credentials or OAuth (Google, GitHub).
   - **Advanced Profile Management**: Custom usernames, display names, and profile picture management with integrated cropping.
@@ -49,7 +55,8 @@ LinkOps is built with a focus on scalability, performance, and developer experie
 ### **DevOps & Deployment**
 
 - **Containerization**: [Docker](https://www.docker.com/) & Docker Compose for consistent environments.
-- **Deployment**: Custom automated bash scripts for building and pushing to Docker Hub, then deploying to a VPS (OVH) via SSH.
+- **Registry**: [GitHub Container Registry (GHCR)](https://github.com/features/packages) for hosting Docker images.
+- **Deployment**: Custom automated bash scripts for building and pushing to GHCR, then deploying to a VPS (OVH) via SSH and Docker Compose.
 - **Testing**:
   - **Unit/Integration**: [Jest](https://jestjs.io/) & React Testing Library.
   - **E2E**: [Playwright](https://playwright.dev/) for robust browser automation tests.
@@ -76,6 +83,8 @@ LinkOps is built with a focus on scalability, performance, and developer experie
 2. **Environment Configuration**:
    Create a `.env` file based on `.env.example`. Ensure you provide valid credentials for PostgreSQL, Redis, and Better-Auth.
 
+   > **Note**: For staging environment, use `.env.staging` and the `staging` branch.
+
 3. **Database Initialization**:
 
    ```bash
@@ -96,7 +105,21 @@ The project includes a `docker-deploy.sh` script for automated deployment:
 npm run deploy
 ```
 
-This builds the production image for `linux/amd64`, pushes it to Docker Hub, and triggers a pull/redeploy on the target VPS.
+This builds the production image for `linux/amd64`, pushes it to GitHub Container Registry (GHCR), and triggers a pull/redeploy on the target VPS.
+
+### Staging Environment
+
+The project maintains a `dev` branch for staging. Pushes to this branch trigger a deployment to the staging environment, accessible via port `3071`.
+
+## 🤝 Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. **Fork the Project**
+2. **Create your Feature Branch** (`git checkout -b feature/AmazingFeature`)
+3. **Commit your Changes** (`git commit -m 'Add some AmazingFeature'`)
+4. **Push to the Branch** (`git push origin feature/AmazingFeature`)
+5. **Open a Pull Request**
 
 ## 📄 License
 

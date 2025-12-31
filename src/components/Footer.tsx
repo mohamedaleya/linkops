@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { LinkIcon, Github } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { version } from '../../package.json';
+import packageInfo from '../../package.json';
+const version = packageInfo.version;
 
 export default function Footer() {
   return (
@@ -35,26 +36,36 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="flex flex-row gap-12 sm:gap-24 lg:col-span-8 lg:justify-end">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-8">
             <div className="flex flex-col items-start gap-2">
               <h3 className="font-semibold tracking-tight">Product</h3>
               <Link
-                href="#"
+                href="/features"
                 className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Features
               </Link>
               <Link
-                href="#"
+                href="/pricing"
                 className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Pricing
               </Link>
               <Link
-                href="#"
+                href="/all-links"
                 className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                Analytics
+                All Links
+              </Link>
+            </div>
+
+            <div className="flex flex-col items-start gap-2">
+              <h3 className="font-semibold tracking-tight">Company</h3>
+              <Link
+                href="/contact"
+                className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Contact
               </Link>
               <Link
                 href="/changelog"
@@ -103,7 +114,7 @@ export default function Footer() {
 
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground/60 text-xs font-medium uppercase tracking-wider">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
                 Version
               </span>
               <span className="text-sm font-semibold text-muted-foreground">

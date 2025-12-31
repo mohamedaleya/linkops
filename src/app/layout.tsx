@@ -2,8 +2,10 @@ import './globals.css';
 import { Outfit } from 'next/font/google';
 import type React from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { EncryptionProvider } from '@/context/EncryptionContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AlphaBanner from '@/components/AlphaBanner';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import CookieBanner from '@/components/CookieBanner';
@@ -18,8 +20,8 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_URL || 'https://linkops.at'),
   title: {
-    default: 'LinkOps - Advanced URL Management & Analytics',
-    template: '%s | LinkOps',
+    default: 'LinkOps - Advanced URL Shortener & Link Management',
+    template: 'LinkOps - %s',
   },
   description:
     'LinkOps is a professional, fast, and secure URL management platform with deep analytics and team collaboration features.',
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'LinkOps',
-    title: 'LinkOps - Advanced URL Management & Analytics',
+    title: 'LinkOps - Advanced URL Shortener & Link Management',
     description:
       'Professional URL shortening with deep analytics, custom slugs, and enterprise-grade performance.',
     images: [
@@ -47,7 +49,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LinkOps - Advanced URL Management & Analytics',
+    title: 'LinkOps - Advanced URL Shortener & Link Management',
     description: 'Professional URL shortening with deep analytics.',
     images: ['/og-image.png'],
   },
@@ -95,29 +97,32 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          <main className="relative flex-1">
-            {/* Global Decorative Background */}
-            <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-              {/* Gradient orbs */}
-              <div className="bg-primary/10 absolute -right-40 -top-40 h-80 w-80 animate-pulse rounded-full blur-3xl" />
-              <div className="bg-primary/5 absolute -bottom-40 -left-40 h-80 w-80 animate-pulse rounded-full blur-3xl [animation-delay:1s]" />
+          <EncryptionProvider>
+            <AlphaBanner />
+            <Header />
+            <main className="relative flex-1">
+              {/* Global Decorative Background */}
+              <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+                {/* Gradient orbs */}
+                <div className="absolute -right-40 -top-40 h-80 w-80 animate-pulse rounded-full bg-primary/10 blur-3xl" />
+                <div className="absolute -bottom-40 -left-40 h-80 w-80 animate-pulse rounded-full bg-primary/5 blur-3xl [animation-delay:1s]" />
 
-              {/* Grid pattern */}
-              <div
-                className="absolute inset-0 opacity-[0.02]"
-                style={{
-                  backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
-                  backgroundSize: '40px 40px',
-                }}
-              />
-            </div>
-            {children}
-          </main>
-          <Footer />
-          <SonnerToaster position="bottom-right" />
-          <Toaster />
-          <CookieBanner />
+                {/* Grid pattern */}
+                <div
+                  className="absolute inset-0 opacity-[0.02]"
+                  style={{
+                    backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
+                    backgroundSize: '40px 40px',
+                  }}
+                />
+              </div>
+              {children}
+            </main>
+            <Footer />
+            <SonnerToaster position="bottom-right" />
+            <Toaster />
+            <CookieBanner />
+          </EncryptionProvider>
         </ThemeProvider>
       </body>
     </html>

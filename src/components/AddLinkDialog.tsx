@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,28 +14,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { DisabledSwitchWrapper } from '@/components/ui/disabled-switch-wrapper';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { DatePicker } from '@/components/ui/date-picker';
 import {
   Activity,
   Globe,
   Link as LinkIcon,
-  ArrowRightLeft,
-  Clock,
-  Info,
   Tag,
   Lock,
-  Megaphone,
-  ChevronDown,
-  Settings2,
+  ShieldCheck,
+  ShieldAlert,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -44,7 +34,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AdvancedSettings } from './AdvancedSettings';
+import { useEncryption } from '@/context/EncryptionContext';
+import { EncryptionSetupDialog } from './EncryptionSetupDialog';
+import { UnlockVaultDialog } from './UnlockVaultDialog';
+import { useSession } from '@/lib/auth-client';
 
 interface AddLinkDialogProps {
   open: boolean;
@@ -66,6 +60,14 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
   const [utmMedium, setUtmMedium] = useState('');
   const [utmCampaign, setUtmCampaign] = useState('');
 
+  // Encryption
+  const { data: session } = useSession();
+  const { isEncryptionEnabled, isKeyUnlocked, encrypt, lock, isSupported } =
+    useEncryption();
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [isUnlockOpen, setIsUnlockOpen] = useState(false);
+  const willEncrypt = isEncryptionEnabled && isKeyUnlocked && !isPublic;
+
   const resetForm = () => {
     setUrl('');
     setCustomSlug('');
@@ -84,7 +86,7 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    const data = {
+    let requestBody: Record<string, unknown> = {
       url,
       customSlug: customSlug || undefined,
       password: password || undefined,
@@ -96,11 +98,28 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
       utmCampaign: utmCampaign || undefined,
     };
 
+    // Handle E2E encryption if enabled and unlocked
+    if (willEncrypt) {
+      try {
+        const encryptedData = await encrypt(url);
+        requestBody = {
+          ...requestBody,
+          url: '', // Don't send plaintext
+          encryptedUrl: encryptedData.ciphertext,
+          encryptionIv: encryptedData.iv,
+        };
+      } catch {
+        toast.error('Encryption failed. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch('/api/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await res.json();
@@ -116,9 +135,14 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
         return;
       }
 
-      toast.success('Link created successfully!', {
-        description: `Your short link: /s/${result.shortened_id}`,
-      });
+      toast.success(
+        willEncrypt
+          ? 'URL encrypted and shortened successfully!'
+          : 'Link created successfully!',
+        {
+          description: `Your short link: /s/${result.shortened_id}`,
+        }
+      );
       resetForm();
       onOpenChange(false);
       router.refresh();
@@ -137,6 +161,12 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
     onOpenChange(newOpen);
   };
 
+  useEffect(() => {
+    if (password) {
+      setIsPublic(false);
+    }
+  }, [password]);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
@@ -149,21 +179,91 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
         <form onSubmit={handleCreate} className="space-y-6 pt-4">
           {/* Destination URL */}
           <div className="space-y-2">
-            <Label
-              htmlFor="url"
-              className="flex items-center gap-1.5 text-left"
-            >
-              <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
-              Destination URL
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="url"
+                className="flex items-center gap-1.5 text-left"
+              >
+                <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                Destination URL
+              </Label>
+              {session?.user && isSupported && (
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isEncryptionEnabled) setIsSetupOpen(true);
+                          else if (!isKeyUnlocked) setIsUnlockOpen(true);
+                          else lock();
+                        }}
+                        className={cn(
+                          'flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all',
+                          isEncryptionEnabled
+                            ? isKeyUnlocked
+                              ? isPublic
+                                ? 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                                : 'bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400'
+                              : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                        )}
+                      >
+                        {isEncryptionEnabled ? (
+                          isKeyUnlocked ? (
+                            isPublic ? (
+                              <>
+                                <ShieldAlert className="h-3 w-3" /> Public (No
+                                E2E)
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-3 w-3" /> Encrypted
+                              </>
+                            )
+                          ) : (
+                            <>
+                              <ShieldAlert className="h-3 w-3" /> Unlock Vault
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <Shield className="h-3 w-3" /> Enable E2E
+                          </>
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-[200px]">
+                      <p className="text-xs">
+                        {isEncryptionEnabled
+                          ? isKeyUnlocked
+                            ? isPublic
+                              ? 'Public links cannot be end-to-end encrypted.'
+                              : 'Your link will be encrypted locally before being saved.'
+                            : 'Click to unlock your vault and encrypt this link.'
+                          : 'Click to set up end-to-end encryption.'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
             <Input
               id="url"
               name="url"
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/your-long-url"
+              placeholder={
+                willEncrypt
+                  ? 'Protected destination URL...'
+                  : 'https://example.com/your-long-url'
+              }
               required
+              className={cn(
+                willEncrypt &&
+                  'border-green-500/30 focus-visible:ring-green-500/20'
+              )}
             />
           </div>
 
@@ -186,206 +286,27 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
             />
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border px-4 py-2">
-            {/* Advanced Options Toggle */}
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full justify-between px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              <div className="flex items-center gap-2">
-                <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="flex items-center gap-2">
-                  Advanced Options
-                </span>
-              </div>
-              <ChevronDown
-                className={cn(
-                  'h-4 w-4 transition-transform duration-200',
-                  showAdvanced && 'rotate-180'
-                )}
-              />
-            </Button>
-
-            {/* Advanced Options */}
-            <AnimatePresence initial={false}>
-              {showAdvanced && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
-                  className="overflow-hidden p-2"
-                >
-                  <div className="space-y-6">
-                    {/* Redirect Type */}
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="redirectType"
-                        className="flex items-center gap-1.5 text-left"
-                      >
-                        <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
-                        Redirect Type
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 cursor-help text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[280px] p-3 text-xs leading-relaxed">
-                              <div className="space-y-2 text-left">
-                                <p>
-                                  <span className="font-bold">
-                                    301 Permanent:
-                                  </span>{' '}
-                                  Best for SEO. Tells browsers to cache the URL
-                                  indefinitely.
-                                </p>
-                                <p>
-                                  <span className="font-bold">302 Found:</span>{' '}
-                                  Standard temporary redirect for short-term
-                                  changes.
-                                </p>
-                                <p>
-                                  <span className="font-bold">
-                                    307 Temporary:
-                                  </span>{' '}
-                                  Like 302, but ensures the HTTP method stays
-                                  the same (e.g., POST).
-                                </p>
-                                <p>
-                                  <span className="font-bold">
-                                    308 Permanent:
-                                  </span>{' '}
-                                  Like 301, but ensures the HTTP method stays
-                                  the same.
-                                </p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </Label>
-                      <Select
-                        value={redirectType}
-                        onValueChange={setRedirectType}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="301">301 (Permanent)</SelectItem>
-                          <SelectItem value="302">302 (Found)</SelectItem>
-                          <SelectItem value="307">307 (Temporary)</SelectItem>
-                          <SelectItem value="308">308 (Permanent)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Expiration Date */}
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5 text-left">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                        Expiration Date
-                        <span className="text-xs text-muted-foreground">
-                          (optional)
-                        </span>
-                      </Label>
-                      <DatePicker
-                        date={expiresAt}
-                        setDate={setExpiresAt}
-                        placeholder="Pick a date"
-                      />
-                    </div>
-
-                    {/* Password Protection */}
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="password"
-                        className="flex items-center gap-1.5 text-left"
-                      >
-                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                        Password Protection
-                        <span className="text-xs text-muted-foreground">
-                          (optional)
-                        </span>
-                      </Label>
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    {/* UTM Parameters Section */}
-                    <div className="space-y-3">
-                      <Label className="flex items-center gap-1.5 text-left">
-                        <Megaphone className="h-3.5 w-3.5 text-muted-foreground" />
-                        UTM Parameters
-                        <span className="text-xs text-muted-foreground">
-                          (optional)
-                        </span>
-                      </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <Label
-                            htmlFor="utmSource"
-                            className="text-xs text-muted-foreground"
-                          >
-                            Source
-                          </Label>
-                          <Input
-                            id="utmSource"
-                            value={utmSource}
-                            onChange={(e) => setUtmSource(e.target.value)}
-                            placeholder="google"
-                            className="text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label
-                            htmlFor="utmMedium"
-                            className="text-xs text-muted-foreground"
-                          >
-                            Medium
-                          </Label>
-                          <Input
-                            id="utmMedium"
-                            value={utmMedium}
-                            onChange={(e) => setUtmMedium(e.target.value)}
-                            placeholder="cpc"
-                            className="text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label
-                            htmlFor="utmCampaign"
-                            className="text-xs text-muted-foreground"
-                          >
-                            Campaign
-                          </Label>
-                          <Input
-                            id="utmCampaign"
-                            value={utmCampaign}
-                            onChange={(e) => setUtmCampaign(e.target.value)}
-                            placeholder="sale"
-                            className="text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <AdvancedSettings
+            showAdvanced={showAdvanced}
+            setShowAdvanced={setShowAdvanced}
+            redirectType={redirectType}
+            setRedirectType={setRedirectType}
+            expiresAt={expiresAt}
+            setExpiresAt={setExpiresAt}
+            password={password}
+            setPassword={setPassword}
+            utmSource={utmSource}
+            setUtmSource={setUtmSource}
+            utmMedium={utmMedium}
+            setUtmMedium={setUtmMedium}
+            utmCampaign={utmCampaign}
+            setUtmCampaign={setUtmCampaign}
+          />
 
           {/* Link Status Toggle */}
-          <div className="border-muted-foreground/10 bg-muted/30 flex items-center justify-between rounded-xl border p-4">
+          <div className="flex items-center justify-between rounded-xl border border-muted-foreground/10 bg-muted/30 p-4">
             <div className="flex items-center gap-3">
-              <div className="border-muted-foreground/10 rounded-lg border bg-background p-2">
+              <div className="rounded-lg border border-muted-foreground/10 bg-background p-2">
                 <Activity className="h-4 w-4 text-primary" />
               </div>
               <div className="space-y-0.5">
@@ -399,29 +320,65 @@ export function AddLinkDialog({ open, onOpenChange }: AddLinkDialogProps) {
           </div>
 
           {/* Public Toggle */}
-          <div className="border-muted-foreground/10 bg-muted/30 flex items-center justify-between rounded-xl border p-4">
+          <div
+            className={cn(
+              'flex items-center justify-between rounded-xl border border-muted-foreground/10 bg-muted/30 p-4 transition-opacity',
+              !!password && 'opacity-60'
+            )}
+          >
             <div className="flex items-center gap-3">
-              <div className="border-muted-foreground/10 rounded-lg border bg-background p-2">
+              <div className="rounded-lg border border-muted-foreground/10 bg-background p-2">
                 <Globe className="h-4 w-4 text-primary" />
               </div>
               <div className="space-y-0.5">
-                <Label className="block text-left">Public Link</Label>
+                <Label className="flex items-center gap-2 text-left">
+                  Public Link
+                  {!!password && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Password-protected links must be private</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </Label>
                 <p className="text-left text-xs text-muted-foreground">
                   Display in the global activity feed
                 </p>
               </div>
             </div>
-            <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+            <DisabledSwitchWrapper
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+              disabled={!!password}
+              disabledMessage="Password-protected links must be private."
+            />
           </div>
 
           <DialogFooter>
             <DialogCancel disabled={isLoading}>Cancel</DialogCancel>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Link'}
+            <Button
+              type="submit"
+              loading={isLoading}
+              className={cn(willEncrypt && 'bg-green-600 hover:bg-green-700')}
+            >
+              {isLoading
+                ? 'Creating'
+                : willEncrypt
+                  ? 'Encrypt & Create'
+                  : 'Create Link'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Encryption Dialogs */}
+      <EncryptionSetupDialog open={isSetupOpen} onOpenChange={setIsSetupOpen} />
+      <UnlockVaultDialog open={isUnlockOpen} onOpenChange={setIsUnlockOpen} />
     </Dialog>
   );
 }

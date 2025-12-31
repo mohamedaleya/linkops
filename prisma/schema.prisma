@@ -8,19 +8,29 @@ datasource db {
 }
 
 model ShortLink {
-  id             String              @id @default(cuid())
-  originalUrl    String
-  shortened_id   String              @unique
-  title          String?
-  visits         Int                 @default(0)
-  redirectType   String              @default("307")
-  isEnabled      Boolean             @default(true)
-  expiresAt      DateTime?
-  passwordHash   String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  userId         String?
-  isPublic       Boolean             @default(false)
+  id           String    @id @default(cuid())
+  originalUrl  String // Plaintext for anonymous, empty for encrypted
+  shortened_id String    @unique
+  title        String?
+  visits       Int       @default(0)
+  redirectType String    @default("307")
+  isEnabled    Boolean   @default(true)
+  expiresAt    DateTime?
+  passwordHash String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  userId       String?
+  isPublic     Boolean   @default(false)
+
+  // End-to-end encryption fields
+  encryptedUrl String? // Base64 encrypted URL blob
+  encryptionIv String? // Base64 IV for decryption
+  isEncrypted  Boolean @default(false)
+
+  // Security and Verification
+  isVerified     Boolean @default(false)
+  securityStatus String  @default("unknown") // "secure", "unsafe", "unknown"
+
   clicksDaily    LinkClickDaily[]
   geoDaily       LinkGeoDaily[]
   referrersDaily LinkReferrerDaily[]
@@ -65,20 +75,28 @@ model LinkClickDaily {
 }
 
 model User {
-  id              String      @id
+  id              String   @id
   name            String
   firstName       String?
   lastName        String?
-  username        String?     @unique
+  username        String?  @unique
   displayUsername String?
-  email           String      @unique
+  email           String   @unique
   emailVerified   Boolean
   image           String?
   createdAt       DateTime
   updatedAt       DateTime
-  accounts        Account[]
-  sessions        Session[]
-  links           ShortLink[]
+
+  // End-to-end encryption fields
+  wrappedDek         String? // Base64 wrapped DEK (encrypted with password)
+  dekSalt            String? // Base64 salt for KEK derivation
+  recoveryWrappedDek String? // Base64 DEK wrapped with recovery key
+  recoverySalt       String? // Salt for recovery key derivation
+  encryptionEnabled  Boolean @default(false)
+
+  accounts Account[]
+  sessions Session[]
+  links    ShortLink[]
 
   @@map("user")
 }

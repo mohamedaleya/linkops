@@ -85,11 +85,11 @@ function ResetPasswordContent() {
 
   if (error && !isSuccess) {
     return (
-      <div className="flex min-h-[85vh] items-center justify-center px-4">
-        <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+      <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
           <CardHeader className="space-y-1 text-center">
             <div className="mb-4 flex justify-center">
-              <div className="bg-destructive/10 rounded-xl p-2.5 text-destructive shadow-lg">
+              <div className="rounded-xl bg-destructive/10 p-2.5 text-destructive shadow-lg">
                 <AlertCircle className="h-6 w-6" />
               </div>
             </div>
@@ -109,11 +109,11 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="flex min-h-[85vh] items-center justify-center px-4">
-      <Card className="bg-card/80 w-full max-w-md overflow-hidden border-none shadow-2xl ring-1 ring-border backdrop-blur-xl">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="shadow-primary/20 rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg">
+            <div className="rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg shadow-primary/20">
               <LinkIcon className="h-6 w-6" />
             </div>
           </div>
@@ -150,10 +150,12 @@ function ResetPasswordContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
+                    disabled={isLoading}
+                    className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
                   />
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-primary"
                   >
@@ -181,10 +183,12 @@ function ResetPasswordContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="border-muted-foreground/20 focus:ring-primary/40 h-11 pl-10 pr-10 transition-all focus:border-primary"
+                    disabled={isLoading}
+                    className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
                   />
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-primary"
                   >
@@ -221,22 +225,15 @@ function ResetPasswordContent() {
 
               <Button
                 type="submit"
+                loading={isLoading}
                 disabled={
-                  isLoading ||
                   !password ||
                   !checkPasswordRequirements(password) ||
                   password !== confirmPassword
                 }
-                className="shadow-primary/20 h-11 w-full text-base font-bold shadow-lg transition-all"
+                className="h-11 w-full text-base font-bold shadow-lg shadow-primary/20 transition-all"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Resetting password...
-                  </>
-                ) : (
-                  'Update Password'
-                )}
+                {isLoading ? 'Resetting password' : 'Update Password'}
               </Button>
             </form>
           )}
@@ -250,7 +247,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[85vh] items-center justify-center">
+        <div className="flex min-h-[85vh] items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }

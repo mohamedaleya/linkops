@@ -20,7 +20,6 @@ import {
   ChevronDown,
   MoreHorizontal,
   Copy,
-  ExternalLink,
   Trash2,
   Eye,
   Pencil,
@@ -32,10 +31,16 @@ import {
   X,
   Link2Off,
   Plus,
+  ShieldCheck,
+  ShieldAlert,
+  KeyRound,
 } from 'lucide-react';
+import { VerifiedBadge } from './VerifiedBadge';
+import { useEncryption } from '@/context/EncryptionContext';
 import { cn } from '@/lib/utils';
 import { AddLinkDialog } from './AddLinkDialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -95,7 +100,182 @@ export type LinkData = {
   createdAt: string;
   redirectType: string;
   isPublic: boolean;
+  hasPassword?: boolean;
+  // Encryption fields
+  isEncrypted?: boolean;
+  encryptedUrl?: string | null;
+  encryptionIv?: string | null;
+  // Security fields
+  isVerified?: boolean;
+  securityStatus?: string;
 };
+
+function DecryptedUrlCell({ link }: { link: LinkData }) {
+  const { decrypt, isKeyUnlocked, isFetching } = useEncryption();
+  const [decryptedUrl, setDecryptedUrl] = React.useState<string | null>(null);
+  const [isDecrypting, setIsDecrypting] = React.useState(false);
+
+  React.useEffect(() => {
+    if (
+      link.isEncrypted &&
+      isKeyUnlocked &&
+      link.encryptedUrl &&
+      link.encryptionIv
+    ) {
+      const doDecrypt = async () => {
+        setIsDecrypting(true);
+        try {
+          const url = await decrypt({
+            ciphertext: link.encryptedUrl!,
+            iv: link.encryptionIv!,
+          });
+          setDecryptedUrl(url);
+        } catch (err) {
+          console.error('Decryption failed:', err);
+        } finally {
+          setIsDecrypting(false);
+        }
+      };
+      doDecrypt();
+    } else {
+      setDecryptedUrl(null);
+    }
+  }, [link, isKeyUnlocked, decrypt]);
+
+  if (!link.isEncrypted) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="max-w-[200px] cursor-help truncate text-sm text-muted-foreground md:max-w-[300px]">
+              {link.originalUrl}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[400px] break-all">
+            <p>{link.originalUrl}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  if (isFetching) {
+    return (
+      <div className="flex animate-pulse items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>Loading...</span>
+      </div>
+    );
+  }
+
+  if (!isKeyUnlocked) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400">
+        <ShieldAlert className="h-3 w-3" />
+        <span>Vault Locked</span>
+      </div>
+    );
+  }
+
+  if (isDecrypting) {
+    return (
+      <div className="flex animate-pulse items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>Decrypting...</span>
+      </div>
+    );
+  }
+
+  if (decryptedUrl) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex max-w-[200px] cursor-help items-center gap-1.5 truncate text-sm font-medium text-green-600 transition-colors hover:text-green-700 dark:text-green-500 dark:hover:text-green-400 md:max-w-[300px]">
+              <ShieldCheck className="h-3 w-3 shrink-0" />
+              <span className="truncate">{decryptedUrl}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[400px] break-all border-green-500/20 bg-background/95 backdrop-blur-sm">
+            <div className="space-y-1">
+              <p className="flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400">
+                <ShieldCheck className="h-3 w-3" /> End-to-End Encrypted
+              </p>
+              <p className="text-sm">{decryptedUrl}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive transition-colors hover:text-destructive/80">
+      <ShieldAlert className="h-3 w-3" />
+      <span>Decryption Failed</span>
+    </div>
+  );
+}
+
+function StatusToggleCell({ link }: { link: LinkData }) {
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [isEnabled, setIsEnabled] = React.useState(link.isEnabled);
+  const router = useRouter();
+
+  const expiresAt = link.expiresAt;
+  const isExpired = expiresAt && new Date(expiresAt) < new Date();
+
+  const handleToggle = async (checked: boolean) => {
+    setIsUpdating(true);
+    setIsEnabled(checked);
+    try {
+      const res = await fetch(`/api/links/${link.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isEnabled: checked }),
+      });
+      if (!res.ok) throw new Error('Failed to update link');
+      toast.success(checked ? 'Link enabled' : 'Link disabled');
+      router.refresh();
+    } catch {
+      setIsEnabled(!checked); // Revert on error
+      toast.error('Error updating link status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isExpired) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="destructive" className="cursor-help">
+              Expired
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>This link has expired and cannot be toggled</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Switch
+        checked={isEnabled}
+        onCheckedChange={handleToggle}
+        disabled={isUpdating}
+        className="data-[state=checked]:bg-primary"
+      />
+      {isUpdating && (
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      )}
+    </div>
+  );
+}
 
 export const columns: ColumnDef<LinkData>[] = [
   {
@@ -127,23 +307,15 @@ export const columns: ColumnDef<LinkData>[] = [
     header: 'Short Link',
     cell: ({ row }) => {
       const id = row.getValue('shortened_id') as string;
-      const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${id}`;
       return (
-        <div className="group flex items-center gap-2">
-          <span className="truncate font-medium text-primary md:max-w-[150px]">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-medium text-primary md:max-w-[120px]">
             {id}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={() => {
-              navigator.clipboard.writeText(url);
-              toast.success('Copied to clipboard');
-            }}
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
+          <VerifiedBadge
+            isVerified={row.original.isVerified}
+            securityStatus={row.original.securityStatus}
+          />
         </div>
       );
     },
@@ -151,23 +323,7 @@ export const columns: ColumnDef<LinkData>[] = [
   {
     accessorKey: 'originalUrl',
     header: 'Destination',
-    cell: ({ row }) => {
-      const originalUrl = row.getValue('originalUrl') as string;
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="max-w-[200px] cursor-help truncate text-sm text-muted-foreground md:max-w-[300px]">
-                {originalUrl}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[400px] break-all">
-              <p>{originalUrl}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
+    cell: ({ row }) => <DecryptedUrlCell link={row.original} />,
   },
   {
     accessorKey: 'isEnabled',
@@ -193,22 +349,7 @@ export const columns: ColumnDef<LinkData>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => {
-      const isEnabled = row.original.isEnabled;
-      const expiresAt = row.original.expiresAt;
-      const isExpired = expiresAt && new Date(expiresAt) < new Date();
-
-      if (isExpired) return <Badge variant="destructive">Expired</Badge>;
-      if (!isEnabled) return <Badge variant="secondary">Disabled</Badge>;
-      return (
-        <Badge
-          variant="default"
-          className="bg-primary/10 border-primary/20 text-primary"
-        >
-          Active
-        </Badge>
-      );
-    },
+    cell: ({ row }) => <StatusToggleCell link={row.original} />,
   },
   {
     accessorKey: 'isPublic',
@@ -236,8 +377,24 @@ export const columns: ColumnDef<LinkData>[] = [
     },
     cell: ({ row }) => {
       const isPublic = row.original.isPublic;
+      const hasPassword = row.original.hasPassword;
+      const isEncrypted = row.original.isEncrypted;
       return (
-        <div className="flex">
+        <div className="flex items-center gap-1">
+          {isEncrypted && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="rounded-full bg-green-500/10 p-1.5 text-green-600 transition-colors dark:text-green-400">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>End-to-End Encrypted</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -260,6 +417,20 @@ export const columns: ColumnDef<LinkData>[] = [
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {hasPassword && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="rounded-full bg-amber-500/10 p-1.5 text-amber-600 transition-colors dark:text-amber-400">
+                    <KeyRound className="h-3.5 w-3.5" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Password protected</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       );
     },
@@ -329,6 +500,7 @@ export const columns: ColumnDef<LinkData>[] = [
   },
   {
     id: 'actions',
+    header: 'Actions',
     enableHiding: false,
     cell: ({ row }) => <LinkActionCell link={row.original} />,
   },
@@ -361,7 +533,51 @@ function LinkActionCell({ link }: { link: LinkData }) {
   };
 
   return (
-    <>
+    <div className="flex items-center gap-1">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              onClick={() => {
+                const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${link.shortened_id}`;
+                navigator.clipboard.writeText(url);
+                toast.success('Copied to clipboard');
+              }}
+            >
+              <Copy className="h-4 w-4" />
+              <span className="sr-only">Copy link</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Copy link</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              asChild
+            >
+              <Link href={`/dashboard/my-links/${link.id}`}>
+                <Eye className="h-4 w-4" />
+                <span className="sr-only">View details</span>
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View details</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -369,27 +585,13 @@ function LinkActionCell({ link }: { link: LinkData }) {
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-[140px]">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/links/${link.id}`}
-              className="flex cursor-pointer items-center gap-2"
-            >
-              <Eye className="h-4 w-4" /> View Details
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setIsEditDialogOpen(true)}
             className="flex cursor-pointer items-center gap-2"
           >
-            <Pencil className="h-4 w-4" /> Edit Link
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => window.open(`/s/${link.shortened_id}`, '_blank')}
-            className="flex cursor-pointer items-center gap-2"
-          >
-            <ExternalLink className="h-4 w-4" /> Open Link
+            <Pencil className="h-4 w-4" /> Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -418,7 +620,7 @@ function LinkActionCell({ link }: { link: LinkData }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="border-destructive/20 bg-destructive/5 rounded-xl border p-4 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
               This will permanently delete{' '}
               <span className="font-mono font-bold">
                 /s/{link.shortened_id}
@@ -431,14 +633,14 @@ function LinkActionCell({ link }: { link: LinkData }) {
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={isDeleting}
+              loading={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+              {isDeleting ? 'Deleting' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
 
@@ -528,14 +730,14 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Input
           placeholder="Filter by short link or destination..."
           value={globalFilter ?? ''}
           onChange={(event) => setGlobalFilter(event.target.value)}
-          className="border-muted-foreground/20 h-10 max-w-sm"
+          className="h-10 w-full text-base sm:max-w-sm"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 sm:justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10 gap-2">
@@ -602,7 +804,7 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
             }}
             className="overflow-hidden"
           >
-            <div className="bg-primary/5 border-primary/20 flex items-center justify-between rounded-xl border p-3">
+            <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -626,13 +828,9 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
                         size="sm"
                         className="h-8 gap-2"
                         onClick={() => handleBulkEnable(true)}
-                        disabled={isBulkLoading}
+                        loading={isBulkLoading}
                       >
-                        {isBulkLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Power className="h-3.5 w-3.5" />
-                        )}
+                        <Power className="h-3.5 w-3.5" />
                         Enable
                       </Button>
                     </TooltipTrigger>
@@ -647,13 +845,9 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
                         size="sm"
                         className="h-8 gap-2"
                         onClick={() => handleBulkEnable(false)}
-                        disabled={isBulkLoading}
+                        loading={isBulkLoading}
                       >
-                        {isBulkLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <PowerOff className="h-3.5 w-3.5" />
-                        )}
+                        <PowerOff className="h-3.5 w-3.5" />
                         Disable
                       </Button>
                     </TooltipTrigger>
@@ -697,7 +891,7 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="border-muted-foreground/10 bg-muted/30 rounded-xl border p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-muted-foreground/10 bg-muted/30 p-4 text-sm text-muted-foreground">
               This will permanently delete all selected links and their
               associated analytics data.
             </div>
@@ -707,17 +901,17 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
             <Button
               variant="destructive"
               onClick={handleBulkDelete}
-              disabled={isBulkLoading}
+              loading={isBulkLoading}
             >
               {isBulkLoading
-                ? 'Deleting...'
+                ? 'Deleting'
                 : `Delete ${selectedIds.length} Link${selectedIds.length > 1 ? 's' : ''}`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="bg-card/50 mt-4 overflow-hidden rounded-2xl border shadow backdrop-blur-xl">
+      <div className="mt-4 overflow-hidden rounded-2xl border bg-card/50 shadow backdrop-blur-xl">
         <Table>
           <TableHeader className="bg-muted/30">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -746,7 +940,7 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="hover:bg-muted/30 border-muted/10 transition-colors"
+                  className="border-muted/10 transition-colors hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3">

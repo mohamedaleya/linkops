@@ -12,7 +12,7 @@ export default function CookiesPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-16">
       <div className="mb-12 text-center">
-        <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <Cookie className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-4xl font-bold tracking-tight">Cookie Policy</h1>
