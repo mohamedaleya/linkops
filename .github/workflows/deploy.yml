@@ -117,13 +117,13 @@ jobs:
             echo "${{ secrets.STAGING_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           fi
 
-      - name: Copy Config and Env to VPS
+      - name: Copy Config, Env, and Cron to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }}"
+          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }},cron/"
           target: "~/linkops/"
           strip_components: 0
 
@@ -154,11 +154,24 @@ jobs:
             # Pull the new image
             docker pull ghcr.io/${{ github.repository }}:${{ steps.deploy-config.outputs.TAG }}
 
-            # Restart containers
-            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up -d --force-recreate
+            # Run database provisioning first (creates user/db if not exists)
+            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up db_provision
+
+            # Start all other containers (--build for cron container)
+            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up -d --build --force-recreate web redis cron
+
+            # Determine the web container name based on environment
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              WEB_CONTAINER="linkops-web"
+            else
+              WEB_CONTAINER="linkops-staging-web"
+            fi
+
+            # Wait for web container to be healthy
+            sleep 5
 
             # Run database migrations
-            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} exec -T web npx prisma@6.19.0 migrate deploy
+            docker exec -t $WEB_CONTAINER npx --yes prisma@6.19.0 migrate deploy
 
             # Clean up old images
             docker image prune -f

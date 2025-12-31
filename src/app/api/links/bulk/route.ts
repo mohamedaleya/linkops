@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { invalidateLinks } from '@/lib/cache';
 
 // PATCH /api/links/bulk - Bulk update links
 export async function PATCH(request: NextRequest) {
@@ -21,10 +22,19 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Fetch shortened_ids for cache invalidation
+    const linksToInvalidate = await prisma.shortLink.findMany({
+      where: { id: { in: ids } },
+      select: { shortened_id: true },
+    });
+
     const result = await prisma.shortLink.updateMany({
       where: { id: { in: ids } },
       data: { isEnabled },
     });
+
+    // Invalidate cache for all affected links
+    await invalidateLinks(linksToInvalidate.map((l) => l.shortened_id));
 
     return NextResponse.json({
       success: true,
@@ -53,6 +63,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Fetch shortened_ids for cache invalidation before deleting
+    const linksToInvalidate = await prisma.shortLink.findMany({
+      where: { id: { in: ids } },
+      select: { shortened_id: true },
+    });
+
     // Delete related analytics data first
     await prisma.linkClickDaily.deleteMany({
       where: { linkId: { in: ids } },
@@ -68,6 +84,9 @@ export async function DELETE(request: NextRequest) {
     const result = await prisma.shortLink.deleteMany({
       where: { id: { in: ids } },
     });
+
+    // Invalidate cache for all deleted links
+    await invalidateLinks(linksToInvalidate.map((l) => l.shortened_id));
 
     return NextResponse.json({
       success: true,

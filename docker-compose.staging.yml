@@ -1,38 +1,96 @@
 name: linkops-staging
 services:
+  # One-time database provisioning (creates user + database if not exists)
+  db_provision:
+    image: postgres:16-alpine
+    container_name: linkops_staging_db_provision
+    restart: "no"
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: postgres
+      PGUSER: postgres_admin
+      PGPASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      APP_DB: ${APP_DB}
+      APP_USER: ${APP_USER}
+      APP_PASSWORD: ${APP_PASSWORD}
+    networks:
+      - backend
+    command: >
+      sh -c "
+      echo 'Provisioning database and user for LinkOps Staging...';
+      psql -v ON_ERROR_STOP=1
+           --set=app_db=$$APP_DB
+           --set=app_user=$$APP_USER
+           --set=app_pass=$$APP_PASSWORD
+           <<'SQL'
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
+          EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pass');
+        END IF;
+      END
+      $$;
+
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'app_db') THEN
+          EXECUTE format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user');
+        END IF;
+      END
+      $$;
+
+      GRANT CONNECT ON DATABASE :"app_db" TO :"app_user";
+      SQL
+      echo 'Done.';
+      "
+
   web:
     image: ghcr.io/mohamedaleya/linkops:staging
-    container_name: web-staging
+    container_name: linkops-staging-web
     restart: always
     ports:
       - 3071:3000
     env_file: .env.staging
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres-staging
-    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: linkops_staging
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres_data_staging:/var/lib/postgresql/data
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db_provision:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - backend
+      - linkops-staging-internal
 
   redis:
     image: redis:7-alpine
-    container_name: redis-staging
+    container_name: linkops-staging-redis
     restart: always
-    ports:
-      - "6381:6379"
     volumes:
       - redis_data_staging:/data
+    networks:
+      - linkops-staging-internal
+
+  cron:
+    build:
+      context: ./cron
+      dockerfile: Dockerfile
+    container_name: linkops-staging-cron
+    restart: always
+    environment:
+      ANALYTICS_WORKER_SECRET: ${ANALYTICS_WORKER_SECRET}
+      WEB_HOST: linkops-staging-web
+    depends_on:
+      - web
+    networks:
+      - linkops-staging-internal
+
+networks:
+  backend:
+    external: true
+  linkops-staging-internal:
+    driver: bridge
 
 volumes:
-  postgres_data_staging:
   redis_data_staging:

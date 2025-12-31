@@ -1,38 +1,96 @@
 name: linkops-prod
 services:
+  # One-time database provisioning (creates user + database if not exists)
+  db_provision:
+    image: postgres:16-alpine
+    container_name: linkops_db_provision
+    restart: "no"
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: postgres
+      PGUSER: postgres_admin
+      PGPASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      APP_DB: ${APP_DB}
+      APP_USER: ${APP_USER}
+      APP_PASSWORD: ${APP_PASSWORD}
+    networks:
+      - backend
+    command: >
+      sh -c "
+      echo 'Provisioning database and user for LinkOps...';
+      psql -v ON_ERROR_STOP=1
+           --set=app_db=$$APP_DB
+           --set=app_user=$$APP_USER
+           --set=app_pass=$$APP_PASSWORD
+           <<'SQL'
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
+          EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pass');
+        END IF;
+      END
+      $$;
+
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'app_db') THEN
+          EXECUTE format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user');
+        END IF;
+      END
+      $$;
+
+      GRANT CONNECT ON DATABASE :"app_db" TO :"app_user";
+      SQL
+      echo 'Done.';
+      "
+
   web:
     image: ghcr.io/mohamedaleya/linkops:latest
-    container_name: web
+    container_name: linkops-web
     restart: always
     ports:
       - 3070:3000
     env_file: .env.prod
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres
-    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: linkops
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db_provision:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - backend
+      - linkops-internal
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: linkops-redis
     restart: always
-    ports:
-      - "6380:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - linkops-internal
+
+  cron:
+    build:
+      context: ./cron
+      dockerfile: Dockerfile
+    container_name: linkops-cron
+    restart: always
+    environment:
+      ANALYTICS_WORKER_SECRET: ${ANALYTICS_WORKER_SECRET}
+      WEB_HOST: linkops-web
+    depends_on:
+      - web
+    networks:
+      - linkops-internal
+
+networks:
+  backend:
+    external: true
+  linkops-internal:
+    driver: bridge
 
 volumes:
-  postgres_data:
   redis_data:

@@ -1,0 +1,2 @@
+# Run analytics worker every minute
+* * * * * curl -s -X POST -H "Authorization: Bearer ${ANALYTICS_WORKER_SECRET}" http://${WEB_HOST:-web}:3000/api/process-analytics >> /var/log/cron.log 2>&1

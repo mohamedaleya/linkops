@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 import { rateLimit } from '@/lib/rate-limiter';
+import { getLink } from '@/lib/cache';
+import { enqueueAnalytics } from '@/lib/queue';
 
 export async function GET(
   request: Request,
@@ -33,9 +34,8 @@ export async function GET(
 
   try {
     const { id: shortened_id } = await params;
-    const link = await prisma.shortLink.findUnique({
-      where: { shortened_id },
-    });
+    // Use Redis cache for fast lookups
+    const link = await getLink(shortened_id);
 
     // Use NEXT_PUBLIC_URL for production redirects to avoid 0.0.0.0 hostname issues
     const baseUrl = process.env.NEXT_PUBLIC_URL || request.url;
@@ -69,33 +69,7 @@ export async function GET(
       }
     }
 
-    // Async Analytics (for now blocking, Phase 2 will be async)
-    await prisma.shortLink.update({
-      where: { id: link.id },
-      data: { visits: { increment: 1 } },
-    });
-
-    // Handle daily click aggregation
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // 1. Total daily clicks
-    const clickDailyPromise = prisma.linkClickDaily.upsert({
-      where: {
-        linkId_date: {
-          linkId: link.id,
-          date: today,
-        },
-      },
-      update: { clicks: { increment: 1 } },
-      create: {
-        linkId: link.id,
-        date: today,
-        clicks: 1,
-      },
-    });
-
-    // 2. Referrer aggregation
+    // Async Analytics - enqueue for background processing (non-blocking)
     const refererHeader = request.headers.get('referer');
     let referrer = 'Direct';
     if (refererHeader) {
@@ -106,53 +80,18 @@ export async function GET(
       }
     }
 
-    const referrerDailyPromise = prisma.linkReferrerDaily.upsert({
-      where: {
-        linkId_date_referrer: {
-          linkId: link.id,
-          date: today,
-          referrer,
-        },
-      },
-      update: { clicks: { increment: 1 } },
-      create: {
-        linkId: link.id,
-        date: today,
-        referrer,
-        clicks: 1,
-      },
-    });
-
-    // 3. Geographic aggregation
-    // Try to get country from Vercel/Cloudflare headers or default to Unknown
     const country =
       request.headers.get('x-vercel-ip-country') ||
       request.headers.get('cf-ipcountry') ||
       'Unknown';
 
-    const geoDailyPromise = prisma.linkGeoDaily.upsert({
-      where: {
-        linkId_date_country: {
-          linkId: link.id,
-          date: today,
-          country,
-        },
-      },
-      update: { clicks: { increment: 1 } },
-      create: {
-        linkId: link.id,
-        date: today,
-        country,
-        clicks: 1,
-      },
+    // Fire-and-forget: don't await, just enqueue
+    enqueueAnalytics({
+      linkId: link.id,
+      referrer,
+      country,
+      timestamp: Date.now(),
     });
-
-    // Run all tracking updates
-    await Promise.all([
-      clickDailyPromise,
-      referrerDailyPromise,
-      geoDailyPromise,
-    ]);
 
     // Handle E2E Encrypted Links
     if (link.isEncrypted) {

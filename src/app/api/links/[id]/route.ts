@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { invalidateLink } from '@/lib/cache';
 
 export async function GET(
   request: Request,
@@ -125,6 +126,12 @@ export async function PATCH(
       },
     });
 
+    // Invalidate cache for this link (use both old and new slugs if changed)
+    await invalidateLink(existingLink.shortened_id);
+    if (shortened_id && shortened_id !== existingLink.shortened_id) {
+      await invalidateLink(shortened_id);
+    }
+
     revalidatePath('/');
     revalidatePath('/dashboard');
 
@@ -166,6 +173,9 @@ export async function DELETE(
     await prisma.shortLink.delete({
       where: { id },
     });
+
+    // Invalidate cache for this link
+    await invalidateLink(existingLink.shortened_id);
 
     revalidatePath('/');
     revalidatePath('/dashboard');
