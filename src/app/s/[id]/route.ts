@@ -103,6 +103,11 @@ export async function GET(
       timestamp: Date.now(),
     });
 
+    // Handle E2E Encrypted Links
+    if (link.isEncrypted) {
+      return NextResponse.redirect(new URL(`/go/e/${shortened_id}`, baseUrl));
+    }
+
     const status = (parseInt(link.redirectType) || 307) as
       | 301
       | 302
