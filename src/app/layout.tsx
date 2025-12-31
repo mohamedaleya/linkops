@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { EncryptionProvider } from '@/context/EncryptionContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AlphaBanner from '@/components/AlphaBanner';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import CookieBanner from '@/components/CookieBanner';
@@ -97,6 +98,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <EncryptionProvider>
+            <AlphaBanner />
             <Header />
             <main className="relative flex-1">
               {/* Global Decorative Background */}

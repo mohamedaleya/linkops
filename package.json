@@ -53,6 +53,7 @@
     "react": "^19.0.0",
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.0.0",
+    "react-fast-marquee": "^1.6.5",
     "react-image-crop": "^11.0.10",
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.4",
