@@ -10,7 +10,7 @@ import { LinkData } from '@/components/LinksDataTable';
 import { PrivateLinkCard } from '@/components/PrivateLinkCard';
 
 export const metadata: Metadata = {
-  title: 'All Links - LinkOps',
+  title: 'Link Directory - LinkOps',
   description: 'Explore public links and manage your own private links.',
 };
 
@@ -37,7 +37,7 @@ async function getPrivateLinks(userId: string): Promise<LinkData[]> {
   }
 }
 
-export default async function AllLinksPage() {
+export default async function LinkDirectoryPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

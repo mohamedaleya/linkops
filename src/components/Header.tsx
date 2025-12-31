@@ -50,6 +50,7 @@ import { useEncryption } from '@/context/EncryptionContext';
 import { EncryptionSetupDialog } from './EncryptionSetupDialog';
 import { UnlockVaultDialog } from './UnlockVaultDialog';
 import * as React from 'react';
+import { Skeleton } from './ui/skeleton';
 
 const Header = () => {
   const { data: session, isPending } = useSession();
@@ -83,8 +84,11 @@ const Header = () => {
                   asChild
                   className={navigationMenuTriggerStyle()}
                 >
-                  <Link href="/all-links" className="flex items-center gap-2">
-                    All Links
+                  <Link
+                    href="/link-directory"
+                    className="flex items-center gap-2"
+                  >
+                    Link Directory
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -128,13 +132,19 @@ const Header = () => {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <div className="mx-2 hidden h-6 w-px bg-border sm:block" />
-          {isPending ? null : (
+          {isPending ? (
+            <div className="flex items-center gap-2">
+              <Skeleton className="hidden h-9 w-[70px] rounded-full md:block" />
+              <Skeleton className="hidden h-9 w-[80px] rounded-full md:block" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          ) : (
             <>
               {session ? (
                 <div className="flex items-center gap-2">
                   {/* Vault Button - Desktop */}
                   {isSupported && isFetching ? (
-                    <div className="hidden h-9 w-[85px] animate-pulse rounded-full bg-muted md:block" />
+                    <Skeleton className="hidden h-9 w-[85px] rounded-full md:block" />
                   ) : (
                     isSupported && (
                       <TooltipProvider delayDuration={100}>
@@ -348,12 +358,12 @@ const Header = () => {
                 {/* Primary Navigation */}
                 <div className="flex flex-col gap-2">
                   <Link
-                    href="/all-links"
+                    href="/link-directory"
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <LayoutDashboard className="h-5 w-5" />
-                    All Links
+                    Link Directory
                   </Link>
                   <Link
                     href="/"
@@ -402,8 +412,8 @@ const Header = () => {
                       {/* Vault Button - Mobile */}
                       {isSupported && isFetching ? (
                         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-                          <div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
-                          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                          <Skeleton className="h-5 w-5 rounded-full" />
+                          <Skeleton className="h-4 w-24" />
                         </div>
                       ) : (
                         isSupported && (
@@ -470,7 +480,12 @@ const Header = () => {
 
                 {/* Auth Section - Fixed to bottom */}
                 <div className="border-t pt-4">
-                  {isPending ? null : session ? (
+                  {isPending ? (
+                    <div className="flex flex-col gap-3 px-3">
+                      <Skeleton className="h-10 w-full rounded-md" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                    </div>
+                  ) : session ? (
                     <button
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-base font-medium text-destructive transition-colors hover:bg-destructive/10"
                       onClick={async () => {

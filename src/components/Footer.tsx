@@ -52,10 +52,10 @@ export default function Footer() {
                 Pricing
               </Link>
               <Link
-                href="/all-links"
+                href="/link-directory"
                 className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                All Links
+                Link Directory
               </Link>
             </div>
 

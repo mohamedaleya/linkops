@@ -30,6 +30,7 @@ import QRCodeDisplay from './QRCodeDisplay';
 import { toast } from 'sonner';
 import { useEncryption } from '@/context/EncryptionContext';
 import { useSession } from '@/lib/auth-client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UrlShortener() {
   const [url, setUrl] = useState('');
@@ -143,7 +144,7 @@ export default function UrlShortener() {
               {session?.user &&
                 (isFetching ? (
                   <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2">
-                    <div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
+                    <Skeleton className="h-6 w-6 rounded-full" />
                   </div>
                 ) : (
                   isEncryptionEnabled &&
@@ -277,26 +278,30 @@ export default function UrlShortener() {
                 </div>
               </motion.div>
             )}
-            {isPending
-              ? null
-              : !session?.user && (
-                  <motion.p
-                    key="login-prompt"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-4 text-center text-xs text-muted-foreground"
-                  >
-                    Sign in to enable 🔒{' '}
-                    <span className="font-semibold text-foreground">
-                      End-to-End Encryption
-                    </span>{' '}
-                    and advanced link management.
-                  </motion.p>
-                )}
+            {isPending ? (
+              <div className="mt-4 flex justify-center">
+                <Skeleton className="h-4 w-64" />
+              </div>
+            ) : (
+              !session?.user && (
+                <motion.p
+                  key="login-prompt"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 text-center text-xs text-muted-foreground"
+                >
+                  Sign in to enable 🔒{' '}
+                  <span className="font-semibold text-foreground">
+                    End-to-End Encryption
+                  </span>{' '}
+                  and advanced link management.
+                </motion.p>
+              )
+            )}
           </AnimatePresence>
 
           {shortenedId && (
-            <div className="duration-500 animate-in fade-in slide-in-from-bottom-4">
+            <div className="mt-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex flex-col items-center justify-center space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 ring-8 ring-primary/10">
                   <BadgeCheckIcon className="h-8 w-8 text-primary" />
@@ -379,7 +384,11 @@ export default function UrlShortener() {
       </Card>
 
       {!shortenedId &&
-        (isPending ? null : (
+        (isPending ? (
+          <div className="flex justify-center">
+            <Skeleton className="h-4 w-80" />
+          </div>
+        ) : (
           <p className="animate-slow-fade text-center text-xs text-muted-foreground">
             Tip: Click the gear icon to set a custom slug or expiration date.
           </p>
