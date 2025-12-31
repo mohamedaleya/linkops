@@ -13,8 +13,20 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, url }) {
-      console.log(`Reset password link for ${user.email}: ${url}`);
-      // In production, send an actual email here.
+      const { sendEmail } = await import('./email/client');
+      const { getResetPasswordEmailHtml } =
+        await import('./email/templates/reset-password');
+
+      const html = getResetPasswordEmailHtml(url, user.name || user.email);
+
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your password - LinkOps',
+        html,
+        text: `Reset your password by visiting this link: ${url}`,
+      });
+
+      console.log(`Reset password email sent to ${user.email}`);
     },
     requireEmailVerification: true,
   },

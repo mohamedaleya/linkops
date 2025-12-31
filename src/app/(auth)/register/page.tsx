@@ -74,8 +74,8 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        toast.success('Account created successfully!');
-        router.push('/dashboard');
+        toast.success('Account created successfully! Please check your email.');
+        router.push('/verify-email/check');
         router.refresh();
       } else {
         const data = await res.json();
@@ -131,7 +131,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                    className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function RegisterPage() {
                     onChange={(e) => setLastName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                    className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"
@@ -222,7 +222,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"

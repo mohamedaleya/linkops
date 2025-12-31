@@ -112,7 +112,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"

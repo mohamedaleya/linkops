@@ -133,11 +133,14 @@ jobs:
           fi
 
       - name: Create Env File
+        env:
+          PROD_ENV: ${{ secrets.PRODUCTION_ENV }}
+          STAGE_ENV: ${{ secrets.STAGING_ENV }}
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "${{ secrets.PRODUCTION_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+            echo "$PROD_ENV" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            echo "${{ secrets.STAGING_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+            echo "$STAGE_ENV" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           fi
 
       - name: Copy Config, Env, and Scripts to VPS

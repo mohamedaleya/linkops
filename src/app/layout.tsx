@@ -1,4 +1,5 @@
 import './globals.css';
+import VerificationBanner from '@/components/VerificationBanner';
 import { Outfit } from 'next/font/google';
 import type React from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -99,6 +100,7 @@ export default function RootLayout({
         >
           <EncryptionProvider>
             <AlphaBanner />
+            <VerificationBanner />
             <Header />
             <main className="relative flex-1">
               {/* Global Decorative Background */}
