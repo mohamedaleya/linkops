@@ -16,6 +16,27 @@ export const auth = betterAuth({
       console.log(`Reset password link for ${user.email}: ${url}`);
       // In production, send an actual email here.
     },
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      const { sendEmail } = await import('./email/client');
+      const { getVerificationEmailHtml } =
+        await import('./email/templates/verification');
+
+      const html = getVerificationEmailHtml(url, user.name || user.email);
+
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify your email - LinkOps',
+        html,
+        text: `Verify your email by visiting this link: ${url}`,
+      });
+
+      console.log(`Verification email sent to ${user.email}`);
+    },
   },
   socialProviders: {
     github: {

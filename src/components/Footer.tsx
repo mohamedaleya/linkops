@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { LinkIcon, Github } from 'lucide-react';
+import { Logo } from './Logo';
+import { Github } from 'lucide-react';
 import { Separator } from './ui/separator';
 import packageInfo from '../../package.json';
 const version = packageInfo.version;
@@ -12,12 +13,9 @@ export default function Footer() {
           <div className="lg:col-span-4">
             <Link
               href="/"
-              className="mb-4 flex items-center gap-2 text-xl font-bold tracking-tight"
+              className="mb-4 flex items-center transition-opacity hover:opacity-90"
             >
-              <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
-                <LinkIcon className="h-5 w-5" />
-              </div>
-              <span>LinkOps</span>
+              <Logo className="h-8 w-auto" />
             </Link>
             <p className="mb-6 max-w-sm leading-relaxed text-muted-foreground">
               Empowering your digital presence with powerful link management

@@ -169,7 +169,7 @@ export default function UrlShortener() {
                 required
                 disabled={isShortening}
                 className={cn(
-                  'h-12 pr-12 text-base transition-all',
+                  'h-12 pr-12 text-base transition-colors',
                   session?.user &&
                     (isFetching ||
                       (isEncryptionEnabled &&
