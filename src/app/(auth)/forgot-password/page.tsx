@@ -28,7 +28,8 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      await authClient.forgetPassword(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (authClient as any).forgetPassword(
         {
           email,
           redirectTo: '/reset-password',
@@ -38,12 +39,12 @@ export default function ForgotPasswordPage() {
             setIsSubmitted(true);
             toast.success('Password reset email sent');
           },
-          onError: (ctx) => {
+          onError: (ctx: { error: { message: string } }) => {
             toast.error(ctx.error.message || 'Failed to send reset email');
           },
         }
       );
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -62,13 +63,13 @@ export default function ForgotPasswordPage() {
               Check your email
             </CardTitle>
             <CardDescription className="mt-2 text-base">
-              We've sent a password reset link to <strong>{email}</strong>
+              We&apos;ve sent a password reset link to <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center text-sm text-muted-foreground">
             <p className="mb-4">
-              Click the link in the email to reset your password. If you don't
-              see the email, check your spam folder.
+              Click the link in the email to reset your password. If you
+              don&apos;t see the email, check your spam folder.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center border-t bg-muted/30 p-6">
@@ -95,8 +96,8 @@ export default function ForgotPasswordPage() {
             Forgot password?
           </CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a link to reset your
-            password.
+            Enter your email address and we&apos;ll send you a link to reset
+            your password.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 pt-2">

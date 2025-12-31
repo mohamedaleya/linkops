@@ -32,12 +32,10 @@ import {
   Link2Off,
   Plus,
   ShieldCheck,
-  ShieldAlert,
   KeyRound,
   ExternalLink,
 } from 'lucide-react';
 import { VerifiedBadge } from './VerifiedBadge';
-import { useEncryption } from '@/context/EncryptionContext';
 import { cn } from '@/lib/utils';
 import { AddLinkDialog } from './AddLinkDialog';
 import { Checkbox } from '@/components/ui/checkbox';

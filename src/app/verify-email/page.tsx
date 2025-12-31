@@ -49,7 +49,7 @@ function VerifyEmailContent() {
             },
           }
         );
-      } catch (error) {
+      } catch {
         setStatus('error');
         setMessage('An unexpected error occurred');
       }

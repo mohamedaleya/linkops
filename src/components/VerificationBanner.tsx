@@ -2,7 +2,7 @@
 
 import { authClient } from '@/lib/auth-client';
 import { AlertCircle, Mail, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { usePathname } from 'next/navigation';
@@ -43,7 +43,7 @@ export default function VerificationBanner() {
           },
         }
       );
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setIsResending(false);

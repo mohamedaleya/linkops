@@ -85,7 +85,7 @@ function ResetPasswordContent() {
         toast.success('Password reset successfully');
         router.push('/login');
       }
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);

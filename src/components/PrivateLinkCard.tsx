@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Link2,
   Clock,
@@ -10,13 +10,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useEncryption } from '@/context/EncryptionContext';
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from '@/components/ui/item';
+import { Item, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { EditLinkDialog } from '@/components/EditLinkDialog';
@@ -25,10 +19,9 @@ import { LinkData } from '@/components/LinksDataTable';
 import { DecryptedUrl } from './DecryptedUrl';
 
 export function PrivateLinkCard({ link }: { link: LinkData }) {
-  const { isKeyUnlocked, isFetching } = useEncryption();
+  const {} = useEncryption();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const isLocked = link.isEncrypted && !isFetching && !isKeyUnlocked;
   const href = `${process.env.NEXT_PUBLIC_URL || ''}/s/${link.shortened_id}`;
 
   return (

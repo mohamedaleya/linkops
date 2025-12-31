@@ -267,7 +267,7 @@ export function EncryptionProvider({ children }: EncryptionProviderProps) {
         setIsLoading(false);
       }
     },
-    [isSupported]
+    [isSupported, session, saveKeyToStorage]
   );
 
   /**
@@ -305,7 +305,7 @@ export function EncryptionProvider({ children }: EncryptionProviderProps) {
         setIsLoading(false);
       }
     },
-    [userEncryptionData]
+    [userEncryptionData, session, saveKeyToStorage]
   );
 
   /**
@@ -380,7 +380,7 @@ export function EncryptionProvider({ children }: EncryptionProviderProps) {
         setIsLoading(false);
       }
     },
-    [userEncryptionData]
+    [userEncryptionData, session, saveKeyToStorage]
   );
 
   /**

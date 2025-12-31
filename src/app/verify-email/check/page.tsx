@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
@@ -28,13 +28,13 @@ export default function CheckEmailPage() {
             Check your email
           </CardTitle>
           <CardDescription>
-            We've sent a verification link to your email address.
+            We&apos;ve sent a verification link to your email address.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
           <p className="mb-4">
             Click the link in the email to verify your account and unlock all
-            features. If you don't see the email, check your spam folder.
+            features. If you don&apos;t see the email, check your spam folder.
           </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-3 border-t bg-muted/30 p-6">
