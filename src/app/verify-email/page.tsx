@@ -41,7 +41,7 @@ function VerifyEmailContent() {
           },
           {
             onSuccess: () => {
-              setStatus('success');
+              router.replace('/verify-email/success');
             },
             onError: (ctx) => {
               setStatus('error');
