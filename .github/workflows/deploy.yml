@@ -140,13 +140,13 @@ jobs:
             echo "${{ secrets.STAGING_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           fi
 
-      - name: Copy Config and Env to VPS
+      - name: Copy Config, Env, and Scripts to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }}"
+          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }},scripts/"
           target: "~/linkops/"
           strip_components: 0
 
@@ -162,6 +162,9 @@ jobs:
 
             cd ~/linkops
 
+            # Make init script executable
+            chmod +x scripts/init-db.sh
+
             # Pull the new images
             docker pull ghcr.io/${{ github.repository }}:${{ steps.deploy-config.outputs.TAG }}
             docker pull ghcr.io/${{ github.repository }}-cron:${{ steps.deploy-config.outputs.TAG }}
@@ -174,12 +177,12 @@ jobs:
 
             # Wait for web container to be ready (healthcheck)
             echo "Waiting for web container to be healthy..."
-            for i in {1..30}; do
+            for i in {1..15}; do
               if docker exec ${{ steps.deploy-config.outputs.WEB_CONTAINER }} curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
                 echo "Web container is healthy!"
                 break
               fi
-              echo "Waiting... ($i/30)"
+              echo "Waiting... ($i/15)"
               sleep 1
             done
 
