@@ -519,6 +519,14 @@ export default function ProfilePage() {
                   <p className="text-xs text-muted-foreground">
                     Email cannot be changed at this time
                   </p>
+                  {!session.user.emailVerified && (
+                    <div className="mt-2 flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/10 p-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                        Email not verified
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <Button

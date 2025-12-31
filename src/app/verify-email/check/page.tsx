@@ -128,17 +128,10 @@ function CheckEmailContent() {
       </CardContent>
       <CardFooter className="flex flex-col space-y-3 border-t bg-muted/30 p-6">
         <Button asChild className="w-full">
-          <Link href="/login">
-            Return to Login
+          <Link href="/dashboard">
+            Continue to Dashboard
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
-        </Button>
-        <Button
-          variant="ghost"
-          asChild
-          className="w-full text-muted-foreground"
-        >
-          <Link href="/dashboard">Skip for now</Link>
         </Button>
       </CardFooter>
     </Card>

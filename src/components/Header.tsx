@@ -278,6 +278,11 @@ const Header = () => {
                           <p className="text-xs leading-none text-muted-foreground">
                             {session.user.email}
                           </p>
+                          {!session.user.emailVerified && (
+                            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                              Email not verified
+                            </span>
+                          )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />

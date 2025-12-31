@@ -33,7 +33,7 @@ export const auth = betterAuth({
 
       console.log(`Reset password email sent to ${user.email}`);
     },
-    requireEmailVerification: true,
+    requireEmailVerification: false,
   },
   emailVerification: {
     sendOnSignUp: true,
