@@ -73,10 +73,12 @@ function PasswordSection({
 
   // Sync state if external removePassword changes
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (removePassword !== undefined) {
       if (removePassword) setIsEnabled(false);
       else if (hasExistingPassword) setIsEnabled(true);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [removePassword, hasExistingPassword]);
 
   const handleToggle = (checked: boolean) => {

@@ -49,11 +49,28 @@ function getCookie(name: string) {
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [preferences, setPreferences] = useState<CookieConsent>({
-    necessary: true,
-    analytics: false,
-    marketing: false,
-    preferences: false,
+  const [preferences, setPreferences] = useState<CookieConsent>(() => {
+    if (typeof document === 'undefined')
+      return {
+        necessary: true,
+        analytics: false,
+        marketing: false,
+        preferences: false,
+      };
+    const storedConsent = getCookie(COOKIE_NAME);
+    if (storedConsent) {
+      try {
+        return JSON.parse(storedConsent);
+      } catch {
+        // fall through
+      }
+    }
+    return {
+      necessary: true,
+      analytics: false,
+      marketing: false,
+      preferences: false,
+    };
   });
 
   useEffect(() => {
@@ -63,13 +80,6 @@ export default function CookieBanner() {
       // Add a small delay for a smooth entrance
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
-    } else {
-      // If cookie exists, we could load preferences into state if needed for a "Manage Cookies" footer link
-      try {
-        setPreferences(JSON.parse(storedConsent));
-      } catch {
-        // ignore
-      }
     }
   }, []);
 
