@@ -16,34 +16,29 @@ services:
       APP_PASSWORD: ${APP_PASSWORD}
     networks:
       - backend
-    command: >
-      sh -c "
-      echo 'Provisioning database and user for LinkOps Staging...';
-      psql -v ON_ERROR_STOP=1
-           --set=app_db=$$APP_DB
-           --set=app_user=$$APP_USER
-           --set=app_pass=$$APP_PASSWORD
-           <<'SQL'
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
-          EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pass');
-        END IF;
-      END
-      $$;
-
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'app_db') THEN
-          EXECUTE format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user');
-        END IF;
-      END
-      $$;
-
-      GRANT CONNECT ON DATABASE :"app_db" TO :"app_user";
-      SQL
-      echo 'Done.';
-      "
+    command:
+      - sh
+      - -c
+      - |
+        echo "Provisioning database and user for LinkOps Staging..."
+        psql -v ON_ERROR_STOP=1 --set=app_db="$$APP_DB" --set=app_user="$$APP_USER" --set=app_pass="$$APP_PASSWORD" <<'SQL'
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
+            EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pass');
+          END IF;
+        END
+        $$;
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'app_db') THEN
+            EXECUTE format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user');
+          END IF;
+        END
+        $$;
+        GRANT CONNECT ON DATABASE :"app_db" TO :"app_user";
+        SQL
+        echo "Done."
 
   web:
     image: ghcr.io/mohamedaleya/linkops:staging
