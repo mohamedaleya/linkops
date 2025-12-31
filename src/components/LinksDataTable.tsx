@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { format } from 'date-fns';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -417,12 +418,10 @@ export const columns: ColumnDef<LinkData>[] = [
       );
     },
     cell: ({ row }) => {
+      const date = new Date(row.getValue('createdAt'));
       return (
         <div className="whitespace-nowrap text-[10px] text-muted-foreground md:text-xs">
-          {new Date(row.getValue('createdAt')).toLocaleString(undefined, {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          })}
+          {format(date, 'MMM d, yyyy, h:mm a')}
         </div>
       );
     },

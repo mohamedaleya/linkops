@@ -258,7 +258,7 @@ export function AdvancedSettings({
                   </TooltipProvider>
                 </Label>
                 <Select value={redirectType} onValueChange={setRedirectType}>
-                  <SelectTrigger id="redirectType" className="h-9">
+                  <SelectTrigger id="redirectType" className="h-10">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>

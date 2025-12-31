@@ -21,22 +21,26 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_URL || 'https://linkops.at'),
   title: {
-    default: 'LinkOps - Advanced URL Shortener & Link Management',
+    default: 'LinkOps - Free URL Shortener with Analytics & Link Management',
     template: 'LinkOps - %s',
   },
   description:
-    'LinkOps is a professional, fast, and secure URL management platform with deep analytics and team collaboration features.',
+    'Shorten URLs instantly with LinkOps. Create custom short links, track clicks with detailed analytics, and manage your links securely. Free and fast.',
   keywords: [
     'url shortener',
-    'link management',
-    'analytics',
+    'shorten url',
+    'link shortener',
     'short links',
+    'link management',
+    'link analytics',
+    'custom short urls',
     'branded links',
     'secure links',
     'private links',
     'link encryption',
     'password protected links',
     'link tracking',
+    'free url shortener',
   ],
   authors: [{ name: 'LinkOps Team' }],
   creator: 'LinkOps',
@@ -46,17 +50,22 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'LinkOps',
-    title: 'LinkOps - Advanced URL Shortener & Link Management',
+    title: 'LinkOps - Free URL Shortener with Analytics & Link Management',
     description:
-      'Professional URL shortening with deep analytics, custom slugs, and enterprise-grade performance.',
+      'Shorten long URLs in seconds. Track clicks, create custom slugs, and manage your links with enterprise-grade security.',
     images: [
-      { url: '/og-image.png', width: 1200, height: 630, alt: 'LinkOps' },
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'LinkOps - URL Shortener',
+      },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LinkOps - Advanced URL Shortener & Link Management',
-    description: 'Professional URL shortening with deep analytics.',
+    title: 'LinkOps - Free URL Shortener with Analytics',
+    description: 'Shorten URLs, track clicks, and manage your links securely.',
     images: ['/og-image.png'],
   },
   robots: {

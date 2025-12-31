@@ -191,7 +191,7 @@ export function EditLinkDialog({
       isPublic,
       redirectType,
       expiresAt: expiresAt ? expiresAt.toISOString() : null,
-      ...(shortenedId !== link.shortened_id && { shortenedId }),
+      ...(shortenedId !== link.shortened_id && { shortened_id: shortenedId }),
       ...(passwordValue !== undefined && { password: passwordValue }),
     };
 
