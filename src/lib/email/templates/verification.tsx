@@ -73,7 +73,7 @@ export function getVerificationEmailHtml(url: string, username: string) {
           <p>Thanks for creating an account on LinkOps. Please verify your email address to complete your registration and secure your account.</p>
           
           <div style="text-align: center;">
-            <a href="${url}" class="button">Verify Email</a>
+            <a href="${url}" class="button" style="color: #ffffff !important;">Verify Email</a>
           </div>
           
           <p>Or copy and paste this link into your browser:</p>

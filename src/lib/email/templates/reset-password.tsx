@@ -73,7 +73,7 @@ export function getResetPasswordEmailHtml(url: string, username: string) {
           <p>We received a request to reset the password for your LinkOps account. If you didn't make this request, you can safely ignore this email.</p>
           
           <div style="text-align: center;">
-            <a href="${url}" class="button">Reset Password</a>
+            <a href="${url}" class="button" style="color: #ffffff !important;">Reset Password</a>
           </div>
           
           <p>Or copy and paste this link into your browser:</p>

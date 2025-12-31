@@ -16,7 +16,6 @@ import {
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Logo } from '@/components/Logo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -89,9 +88,6 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
-          <div className="mb-6 flex justify-center">
-            <Logo className="h-10 w-auto" />
-          </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
             Forgot password?
           </CardTitle>

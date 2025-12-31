@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/card';
 import { Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Logo } from '@/components/Logo';
 import {
   PasswordStrengthChecklist,
   checkPasswordRequirements,
@@ -95,9 +94,6 @@ function ResetPasswordContent() {
   return (
     <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
       <CardHeader className="space-y-1 text-center">
-        <div className="mb-6 flex justify-center">
-          <Logo className="h-10 w-auto" />
-        </div>
         <CardTitle className="text-2xl font-bold tracking-tight">
           Reset Password
         </CardTitle>

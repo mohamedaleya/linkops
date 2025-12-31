@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -88,9 +87,6 @@ export default function LoginPage() {
     <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
-          <div className="mb-6 flex justify-center">
-            <Logo className="h-10 w-auto" />
-          </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
             Welcome back
           </CardTitle>

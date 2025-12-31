@@ -17,13 +17,18 @@ export const auth = betterAuth({
       const { getResetPasswordEmailHtml } =
         await import('./email/templates/reset-password');
 
-      const html = getResetPasswordEmailHtml(url, user.name || user.email);
+      // Replace /api/auth with /auth for cleaner user-facing URLs
+      const publicUrl = url.replace('/api/auth/', '/auth/');
+      const html = getResetPasswordEmailHtml(
+        publicUrl,
+        user.name || user.email
+      );
 
       await sendEmail({
         to: user.email,
         subject: 'Reset your password - LinkOps',
         html,
-        text: `Reset your password by visiting this link: ${url}`,
+        text: `Reset your password by visiting this link: ${publicUrl}`,
       });
 
       console.log(`Reset password email sent to ${user.email}`);
@@ -38,13 +43,15 @@ export const auth = betterAuth({
       const { getVerificationEmailHtml } =
         await import('./email/templates/verification');
 
-      const html = getVerificationEmailHtml(url, user.name || user.email);
+      // Replace /api/auth with /auth for cleaner user-facing URLs
+      const publicUrl = url.replace('/api/auth/', '/auth/');
+      const html = getVerificationEmailHtml(publicUrl, user.name || user.email);
 
       await sendEmail({
         to: user.email,
         subject: 'Verify your email - LinkOps',
         html,
-        text: `Verify your email by visiting this link: ${url}`,
+        text: `Verify your email by visiting this link: ${publicUrl}`,
       });
 
       console.log(`Verification email sent to ${user.email}`);
