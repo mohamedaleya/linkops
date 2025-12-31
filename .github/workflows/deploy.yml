@@ -186,8 +186,8 @@ jobs:
               sleep 1
             done
 
-            # Run database migrations
-            docker exec -t ${{ steps.deploy-config.outputs.WEB_CONTAINER }} npx --yes prisma@6.19.0 migrate deploy
+            # Run database migrations (uses pre-installed Prisma in image)
+            docker exec -t ${{ steps.deploy-config.outputs.WEB_CONTAINER }} npx prisma migrate deploy
 
             # Clean up old images
             docker image prune -f

@@ -38,6 +38,10 @@ docker-deploy.sh
 # Misc
 README.md
 *.md
+.agent
+.gemini
+.husky
+coverage
 tests
 __tests__
 *.test.*

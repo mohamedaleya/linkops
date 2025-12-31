@@ -83,6 +83,8 @@ async function getLinkWithStats(id: string, days: number = 30) {
   };
 }
 
+import { DecryptedUrl } from '@/components/DecryptedUrl';
+
 export default async function LinkDetailsPage({
   params,
   searchParams,
@@ -114,16 +116,15 @@ export default async function LinkDetailsPage({
                 E2E Encrypted
               </div>
             ) : null}
-            <p className="flex items-center gap-2 text-sm italic text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm italic text-muted-foreground">
               <Target className="h-3.5 w-3.5" />
-              {link.isEncrypted ? (
-                <span className="text-xs text-muted-foreground/60">
-                  Unlock vault to view destination
-                </span>
-              ) : (
-                link.originalUrl
-              )}
-            </p>
+              <DecryptedUrl
+                isEncrypted={link.isEncrypted ?? false}
+                originalUrl={link.originalUrl}
+                encryptedUrl={link.encryptedUrl}
+                encryptionIv={link.encryptionIv}
+              />
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-4">
