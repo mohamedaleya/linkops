@@ -31,8 +31,6 @@ All notable changes to this project will be documented in this file.
 - **Session Stability**: Prevented unnecessary session refreshes on window focus changes.
 - **Improved Skeleton Loading**: Better loading states for session-dependent UI elements.
 
----
-
 ## [0.1.0-alpha.1] - 2025-12-30 - Security & Feature Update
 
 - **Unified Dashboard**: Renamed `/links` to `/dashboard` and integrated real-time analytics directly above your link list for at-a-glance insights.

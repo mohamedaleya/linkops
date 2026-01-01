@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LinkStatsChart } from '@/components/LinkStatsChart';
-import { ReferrerChart } from '@/components/ReferrerChart';
-import { GeoChart } from '@/components/GeoChart';
+import {
+  DynamicLinkStatsChart,
+  DynamicReferrerChart,
+  DynamicGeoChart,
+} from '@/components/DynamicCharts';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Button } from '@/components/ui/button';
 import {
@@ -200,11 +202,11 @@ export default async function LinkDetailsPage({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <LinkStatsChart data={link.clicksDaily} />
+          <DynamicLinkStatsChart data={link.clicksDaily} />
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <ReferrerChart data={link.referrersDaily} />
-            <GeoChart data={link.geoDaily} />
+            <DynamicReferrerChart data={link.referrersDaily} />
+            <DynamicGeoChart data={link.geoDaily} />
           </div>
         </div>
         <div className="space-y-6">
