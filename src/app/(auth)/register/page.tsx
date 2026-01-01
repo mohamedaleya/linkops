@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { signIn } from '@/lib/auth-client';
+import { signIn, authClient } from '@/lib/auth-client';
 import {
   PasswordStrengthChecklist,
   checkPasswordRequirements,
@@ -74,7 +74,10 @@ export default function RegisterPage() {
 
       if (res.ok) {
         toast.success('Account created successfully! Please check your email.');
-        window.location.href = `/verify-email/check?email=${encodeURIComponent(email)}`;
+        // Refresh session to update UI state
+        await authClient.getSession();
+        router.refresh(); // Update server components
+        router.push(`/verify-email/check?email=${encodeURIComponent(email)}`);
       } else {
         const data = await res.json();
         toast.error(data.message || 'Failed to create account');

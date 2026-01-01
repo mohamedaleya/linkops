@@ -30,9 +30,9 @@ function CheckEmailContent() {
   // Redirect to dashboard if email is already verified
   useEffect(() => {
     if (!isPending && session?.user?.emailVerified) {
-      window.location.href = '/dashboard';
+      router.replace('/dashboard');
     }
-  }, [session, isPending]);
+  }, [session, isPending, router]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -136,10 +136,7 @@ function CheckEmailContent() {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-3 border-t bg-muted/30 p-6">
-        <Button
-          className="w-full"
-          onClick={() => (window.location.href = '/dashboard')}
-        >
+        <Button className="w-full" onClick={() => router.push('/dashboard')}>
           Continue to Dashboard
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>

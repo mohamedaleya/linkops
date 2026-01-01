@@ -17,6 +17,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build argument for Better Auth Secret (validation only during build)
+ARG BETTER_AUTH_SECRET
+ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+
 RUN bunx --bun prisma generate
 
 # Build argument for NEXT_PUBLIC_URL (baked into client bundle at build time)

@@ -25,14 +25,17 @@ export const auth = betterAuth({
         user.name || user.email
       );
 
-      await sendEmail({
+      // Non-blocking send
+      sendEmail({
         to: user.email,
         subject: 'Reset your password - LinkOps',
         html,
         text: `Reset your password by visiting this link: ${publicUrl}`,
+      }).catch((err) => {
+        console.error('Failed to send reset password email:', err);
       });
 
-      console.log(`Reset password email sent to ${user.email}`);
+      console.log(`Reset password email task initiated for ${user.email}`);
     },
     requireEmailVerification: false,
   },
@@ -48,14 +51,17 @@ export const auth = betterAuth({
       const publicUrl = url.replace('/api/auth/', '/auth/');
       const html = getVerificationEmailHtml(publicUrl, user.name || user.email);
 
-      await sendEmail({
+      // Non-blocking send
+      sendEmail({
         to: user.email,
         subject: 'Verify your email - LinkOps',
         html,
         text: `Verify your email by visiting this link: ${publicUrl}`,
+      }).catch((err) => {
+        console.error('Failed to send verification email:', err);
       });
 
-      console.log(`Verification email sent to ${user.email}`);
+      console.log(`Verification email task initiated for ${user.email}`);
     },
   },
   socialProviders: {
