@@ -41,7 +41,9 @@ export default function DecryptPage() {
       });
 
       // Simple redirect
-      window.location.href = originalUrl;
+      if (typeof window !== 'undefined') {
+        window.location.href = originalUrl;
+      }
     } catch {
       toast.error('Failed to decrypt URL. Your key might be incorrect.');
       setIsRedirecting(false);
