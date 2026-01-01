@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEncryption } from '@/context/EncryptionContext';
+import { useSession } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,6 +12,8 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
+  LogIn,
+  ShieldX,
 } from 'lucide-react';
 import { UnlockVaultDialog } from '@/components/UnlockVaultDialog';
 import { toast } from 'sonner';
@@ -18,12 +21,15 @@ import { toast } from 'sonner';
 export default function DecryptPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session, isPending: isSessionLoading } = useSession();
   const { isKeyUnlocked, decrypt } = useEncryption();
 
   const [linkData, setLinkData] = useState<{
     encryptedUrl: string;
     encryptionIv: string;
     isEncrypted: boolean;
+    isPublic: boolean;
+    userId: string | null;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +83,24 @@ export default function DecryptPage() {
 
   useEffect(() => {
     if (linkData && isKeyUnlocked && !isRedirecting) {
-      handleDecryptAndRedirect();
+      // Only auto-decrypt if user has access (is public OR is owner)
+      const hasAccess =
+        linkData.isPublic ||
+        (session?.user?.id && session.user.id === linkData.userId);
+      if (hasAccess) {
+        handleDecryptAndRedirect();
+      }
     }
-  }, [linkData, isKeyUnlocked, isRedirecting, handleDecryptAndRedirect]);
+  }, [
+    linkData,
+    isKeyUnlocked,
+    isRedirecting,
+    handleDecryptAndRedirect,
+    session,
+  ]);
 
-  if (isLoading) {
+  // Loading state
+  if (isLoading || isSessionLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="space-y-4 text-center">
@@ -94,6 +113,7 @@ export default function DecryptPage() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="flex h-[60vh] items-center justify-center px-4">
@@ -117,6 +137,83 @@ export default function DecryptPage() {
     );
   }
 
+  // Private link - user not logged in
+  if (linkData && !linkData.isPublic && !session) {
+    const callbackUrl = encodeURIComponent(`/go/e/${id}`);
+    return (
+      <div className="flex h-[60vh] items-center justify-center px-4">
+        <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
+          <div className="h-1.5 w-full bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
+          <CardHeader className="pb-2 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-primary/20 bg-primary/10 shadow-inner">
+              <Lock className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Private Link</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              This link is private. Please sign in to access it.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <Button
+              onClick={() => router.push(`/login?callbackUrl=${callbackUrl}`)}
+              className="h-12 w-full text-base font-bold shadow-lg shadow-primary/20"
+            >
+              <LogIn className="mr-2 h-5 w-5" />
+              Log In to Access
+            </Button>
+
+            <div className="border-t border-border/50 pt-4 text-center">
+              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-muted-foreground opacity-50">
+                Zero-Knowledge Privacy Powered by LinkOps
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Private link - user logged in but not the owner
+  if (
+    linkData &&
+    !linkData.isPublic &&
+    session &&
+    session.user?.id !== linkData.userId
+  ) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center px-4">
+        <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
+          <div className="h-1.5 w-full bg-gradient-to-r from-destructive/50 via-destructive to-destructive/50" />
+          <CardHeader className="pb-2 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-destructive/20 bg-destructive/10 shadow-inner">
+              <ShieldX className="h-8 w-8 text-destructive" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Access Denied</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              You do not have permission to access this private link.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/')}
+              className="h-12 w-full text-base font-bold"
+            >
+              Return Home
+            </Button>
+
+            <div className="border-t border-border/50 pt-4 text-center">
+              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-muted-foreground opacity-50">
+                Zero-Knowledge Privacy Powered by LinkOps
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // User has access (is public OR is owner) - show unlock UI
   return (
     <div className="flex h-[60vh] items-center justify-center px-4">
       <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">

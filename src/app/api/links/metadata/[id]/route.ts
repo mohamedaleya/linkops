@@ -15,6 +15,8 @@ export async function GET(
         encryptionIv: true,
         isEnabled: true,
         expiresAt: true,
+        isPublic: true,
+        userId: true,
       },
     });
 
