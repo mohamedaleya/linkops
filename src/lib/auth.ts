@@ -22,7 +22,12 @@ export const auth = betterAuth({
     provider: 'postgresql',
   }),
   secret: getSecret(),
-  trustedOrigins: [process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'],
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'https://linkops.at',
+    'https://staging.linkops.at',
+  ].filter(Boolean) as string[],
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, url }) {
@@ -91,6 +96,34 @@ export const auth = betterAuth({
     accountLinking: {
       enabled: true,
       allowDifferentEmails: true,
+    },
+  },
+  // Server-side rate limiting to protect against abuse
+  rateLimit: {
+    enabled: true,
+    window: 60, // 60 second window
+    max: 100, // max 100 requests per minute by default
+    customRules: {
+      // Strict limit for sending verification emails: 1 per 60 seconds
+      '/send-verification-email': {
+        window: 60,
+        max: 1,
+      },
+      // Strict limit for password reset: 3 per 60 seconds
+      '/forget-password': {
+        window: 60,
+        max: 3,
+      },
+      // Limit sign-in attempts: 5 per 60 seconds
+      '/sign-in/*': {
+        window: 60,
+        max: 5,
+      },
+      // Limit sign-up attempts: 5 per 60 seconds
+      '/sign-up/*': {
+        window: 60,
+        max: 5,
+      },
     },
   },
   databaseHooks: {

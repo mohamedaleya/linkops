@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 
 const COOLDOWN_SECONDS = 60;
+const STORAGE_KEY = 'verification_email_cooldown';
 
 function CheckEmailContent() {
   const searchParams = useSearchParams();
@@ -34,12 +35,32 @@ function CheckEmailContent() {
     }
   }, [session, isPending, router]);
 
+  // Load cooldown from localStorage on mount
+  useEffect(() => {
+    const storedExpiry = localStorage.getItem(STORAGE_KEY);
+    if (storedExpiry) {
+      const expiry = parseInt(storedExpiry, 10);
+      const remaining = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
+      if (remaining > 0) {
+        setCooldownRemaining(remaining);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
+
   // Countdown timer effect
   useEffect(() => {
     if (cooldownRemaining <= 0) return;
 
     const timer = setInterval(() => {
-      setCooldownRemaining((prev) => Math.max(0, prev - 1));
+      setCooldownRemaining((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        return next;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
@@ -58,6 +79,8 @@ function CheckEmailContent() {
         {
           onSuccess: () => {
             toast.success('Verification email sent!');
+            const expiryTime = Date.now() + COOLDOWN_SECONDS * 1000;
+            localStorage.setItem(STORAGE_KEY, expiryTime.toString());
             setCooldownRemaining(COOLDOWN_SECONDS);
           },
           onError: (ctx) => {
@@ -121,18 +144,6 @@ function CheckEmailContent() {
               </>
             )}
           </Button>
-          {cooldownRemaining > 0 && (
-            <div className="mt-3">
-              <div className="mx-auto h-1 w-32 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary transition-all duration-1000 ease-linear"
-                  style={{
-                    width: `${(cooldownRemaining / COOLDOWN_SECONDS) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-3 border-t bg-muted/30 p-6">
