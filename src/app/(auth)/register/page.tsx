@@ -74,8 +74,7 @@ export default function RegisterPage() {
 
       if (res.ok) {
         toast.success('Account created successfully! Please check your email.');
-        router.push(`/verify-email/check?email=${encodeURIComponent(email)}`);
-        router.refresh();
+        window.location.href = `/verify-email/check?email=${encodeURIComponent(email)}`;
       } else {
         const data = await res.json();
         toast.error(data.message || 'Failed to create account');

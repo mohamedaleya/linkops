@@ -14,6 +14,12 @@ export const transporter = nodemailer.createTransport({
     user: SMTP_USER,
     pass: SMTP_PASS,
   },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 5000, // 5 seconds
+  socketTimeout: 15000, // 15 seconds
+  tls: {
+    rejectUnauthorized: false, // Helps with some OVH certificate issues
+  },
 });
 
 export interface SendEmailOptions {
