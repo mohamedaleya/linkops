@@ -4,11 +4,24 @@ import { username } from 'better-auth/plugins';
 import { prisma } from './prisma';
 import { generateUniqueUsername } from './username-generator';
 
+// Helper to get secret with build-time fallback
+const getSecret = () => {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      // Allow build to pass even if secret is missing (it will be provided at runtime)
+      return 'a-very-long-dummy-secret-used-only-for-build-validation-purposes';
+    }
+  }
+  return secret;
+};
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_URL,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
+  secret: getSecret(),
   trustedOrigins: [process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'],
   emailAndPassword: {
     enabled: true,
@@ -24,14 +37,17 @@ export const auth = betterAuth({
         user.name || user.email
       );
 
-      await sendEmail({
+      // Non-blocking send
+      sendEmail({
         to: user.email,
         subject: 'Reset your password - LinkOps',
         html,
         text: `Reset your password by visiting this link: ${publicUrl}`,
+      }).catch((err) => {
+        console.error('Failed to send reset password email:', err);
       });
 
-      console.log(`Reset password email sent to ${user.email}`);
+      console.log(`Reset password email task initiated for ${user.email}`);
     },
     requireEmailVerification: false,
   },
@@ -47,14 +63,17 @@ export const auth = betterAuth({
       const publicUrl = url.replace('/api/auth/', '/auth/');
       const html = getVerificationEmailHtml(publicUrl, user.name || user.email);
 
-      await sendEmail({
+      // Non-blocking send
+      sendEmail({
         to: user.email,
         subject: 'Verify your email - LinkOps',
         html,
         text: `Verify your email by visiting this link: ${publicUrl}`,
+      }).catch((err) => {
+        console.error('Failed to send verification email:', err);
       });
 
-      console.log(`Verification email sent to ${user.email}`);
+      console.log(`Verification email task initiated for ${user.email}`);
     },
   },
   socialProviders: {

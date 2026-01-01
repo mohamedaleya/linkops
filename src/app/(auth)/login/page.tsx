@@ -40,6 +40,7 @@ export default function LoginPage() {
       if (!error) {
         toast.success('Signed in successfully!');
         router.refresh();
+        router.push('/dashboard');
       } else {
         // If sign in fails, check if the user exists via OAuth but has no password
         const { getUserAuthMethods } =

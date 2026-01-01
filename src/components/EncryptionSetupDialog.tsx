@@ -41,7 +41,8 @@ export function EncryptionSetupDialog({
   onOpenChange,
 }: EncryptionSetupDialogProps) {
   const router = useRouter();
-  const { initializeEncryption, isLoading } = useEncryption();
+  const { initializeEncryption, isLoading, setUserEncryptionData } =
+    useEncryption();
 
   const [step, setStep] = useState<Step>('intro');
   const [password, setPassword] = useState('');
@@ -82,21 +83,27 @@ export function EncryptionSetupDialog({
       setRecoveryPhrase(result.recoveryPhrase);
       setStep('recovery');
 
+      const encryptionData = {
+        wrappedDek: result.wrappedDek.wrappedKey,
+        dekSalt: result.wrappedDek.salt,
+        recoveryWrappedDek: result.recoveryWrappedDek.wrappedKey,
+        recoverySalt: result.recoveryWrappedDek.salt,
+        encryptionEnabled: true,
+      };
+
       // Save encryption data to server
       const response = await fetch('/api/users/encryption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wrappedDek: result.wrappedDek.wrappedKey,
-          dekSalt: result.wrappedDek.salt,
-          recoveryWrappedDek: result.recoveryWrappedDek.wrappedKey,
-          recoverySalt: result.recoveryWrappedDek.salt,
-        }),
+        body: JSON.stringify(encryptionData),
       });
 
       if (!response.ok) {
         throw new Error('Failed to save encryption data');
       }
+
+      // Update local context state immediately
+      setUserEncryptionData(encryptionData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Setup failed');
       setStep('password');
@@ -373,14 +380,14 @@ export function EncryptionSetupDialog({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 transition-colors hover:bg-amber-500/10 dark:bg-amber-500/10 dark:hover:bg-amber-500/15">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-destructive">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
                       Keep this phrase secret and secure!
                     </p>
-                    <p className="text-sm text-destructive/80">
+                    <p className="text-sm text-amber-600/80 dark:text-amber-400/80">
                       Anyone with this phrase can access your encrypted links.
                       Store it somewhere safe, like a password manager.
                     </p>

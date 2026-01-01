@@ -122,14 +122,22 @@ export default function UrlShortener() {
   };
 
   const copyToClipboard = async () => {
-    const fullUrl = `${process.env.NEXT_PUBLIC_URL || window.location.origin}/s/${shortenedId}`;
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_URL || '';
+    const fullUrl = `${process.env.NEXT_PUBLIC_URL || origin}/s/${shortenedId}`;
     await navigator.clipboard.writeText(fullUrl);
     setIsCopied(true);
     toast.success('Link copied to clipboard!');
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const shortUrl = `${process.env.NEXT_PUBLIC_URL || window.location.origin}/s/${shortenedId}`;
+  const currentOrigin =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_URL || '';
+  const shortUrl = `${process.env.NEXT_PUBLIC_URL || currentOrigin}/s/${shortenedId}`;
 
   return (
     <div className="space-y-6">
