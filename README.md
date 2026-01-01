@@ -2,7 +2,7 @@
 
 LinkOps is a professional, high-performance URL management platform designed for modern needs. It goes beyond simple shortening, offering detailed analytics, enhanced security features, and a premium user experience with a sleek, responsive design.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat&logo=prisma)](https://www.prisma.io/)
@@ -44,7 +44,7 @@ LinkOps is built with a focus on scalability, performance, and developer experie
 
 ### **Frontend & Backend**
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router & Server Components) for optimal performance and SEO.
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router & Server Components) for optimal performance and SEO.
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) for rapid, consistent UI development.
 - **Components**: [Shadcn UI](https://ui.shadcn.com/) (Radix UI primitives) for accessible, premium-feel components.
 - **Animations**: [Framer Motion](https://www.framer.com/motion/) for smooth layout transitions and micro-interactions.
