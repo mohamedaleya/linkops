@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
+import { authClient, useSession } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,12 +19,20 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
+  const { data: session, isPending: sessionPending } = useSession();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     token ? 'loading' : 'error'
   );
   const [message, setMessage] = useState(
     token ? '' : 'Invalid or missing verification token.'
   );
+
+  // Redirect to dashboard if email is already verified
+  useEffect(() => {
+    if (!sessionPending && session?.user?.emailVerified) {
+      router.replace('/dashboard');
+    }
+  }, [session, sessionPending, router]);
 
   useEffect(() => {
     if (!token) return;

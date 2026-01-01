@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { authClient, useSession } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,10 +20,19 @@ const COOLDOWN_SECONDS = 60;
 
 function CheckEmailContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
   const email = searchParams.get('email') || '';
 
   const [isResending, setIsResending] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // Redirect to dashboard if email is already verified
+  useEffect(() => {
+    if (!isPending && session?.user?.emailVerified) {
+      router.replace('/dashboard');
+    }
+  }, [session, isPending, router]);
 
   // Countdown timer effect
   useEffect(() => {
