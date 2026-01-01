@@ -1,17 +1,52 @@
 'use client';
 
 import { authClient } from '@/lib/auth-client';
-import { AlertCircle, Mail, X } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, Mail, X, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { usePathname } from 'next/navigation';
+
+const COOLDOWN_SECONDS = 60;
+const STORAGE_KEY = 'verification_email_cooldown';
 
 export default function VerificationBanner() {
   const { data: session, isPending } = authClient.useSession();
   const [isVisible, setIsVisible] = useState(true);
   const [isResending, setIsResending] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const pathname = usePathname();
+
+  // Load cooldown from localStorage on mount
+  useEffect(() => {
+    const storedExpiry = localStorage.getItem(STORAGE_KEY);
+    if (storedExpiry) {
+      const expiry = parseInt(storedExpiry, 10);
+      const remaining = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
+      if (remaining > 0) {
+        setCooldownRemaining(remaining);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownRemaining((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownRemaining]);
 
   // Don't show on auth pages or if session is loading/missing
   if (
@@ -26,7 +61,11 @@ export default function VerificationBanner() {
     return null;
   }
 
+  const isDisabled = cooldownRemaining > 0 || isResending;
+
   const handleResend = async () => {
+    if (isDisabled) return;
+
     setIsResending(true);
     try {
       await authClient.sendVerificationEmail(
@@ -37,6 +76,9 @@ export default function VerificationBanner() {
         {
           onSuccess: () => {
             toast.success('Verification email sent!');
+            const expiryTime = Date.now() + COOLDOWN_SECONDS * 1000;
+            localStorage.setItem(STORAGE_KEY, expiryTime.toString());
+            setCooldownRemaining(COOLDOWN_SECONDS);
           },
           onError: (ctx) => {
             toast.error(ctx.error.message || 'Failed to send email');
@@ -92,21 +134,32 @@ export default function VerificationBanner() {
           </svg>
           Please verify your email address to unlock full features.
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleResend}
-          disabled={isResending}
-          className="h-7 rounded-full bg-background/50 px-3 text-xs font-semibold hover:bg-background"
-        >
-          {isResending ? (
-            'Sending...'
-          ) : (
-            <>
-              Resend Verification <Mail className="ml-1.5 h-3 w-3" />
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResend}
+            disabled={isDisabled}
+            className="h-7 gap-1.5 rounded-full bg-background/50 px-3 text-xs font-semibold transition-all hover:bg-background"
+          >
+            {isResending ? (
+              <>
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                Sending...
+              </>
+            ) : cooldownRemaining > 0 ? (
+              <>
+                <RefreshCw className="h-3 w-3" />
+                Resend in {cooldownRemaining}s
+              </>
+            ) : (
+              <>
+                <Mail className="h-3 w-3" />
+                Resend Verification
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       <div className="flex flex-1 justify-end">
         <button

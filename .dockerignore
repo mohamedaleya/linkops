@@ -43,6 +43,7 @@ docker-deploy.sh
 # Misc
 README.md
 *.md
+!CHANGELOG.md
 .agent
 .gemini
 .husky

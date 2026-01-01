@@ -12,15 +12,35 @@ const AlphaBanner = () => {
   ];
 
   return (
-    <div className="relative z-50 h-9 w-full border-b border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 [&_.rfm-initial-child-container]:!overflow-x-hidden [&_.rfm-marquee-container]:!overflow-x-hidden [&_.rfm-marquee]:!overflow-x-hidden">
-      {/* Animated glow effect */}
-      <div className="pointer-events-none absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+    <div className="relative z-50 h-9 w-full overflow-hidden border-b border-white/10 [&_.rfm-initial-child-container]:!overflow-x-hidden [&_.rfm-marquee-container]:!overflow-x-hidden [&_.rfm-marquee]:!overflow-x-hidden">
+      {/* Animated rainbow gradient background */}
+      <div
+        className="animate-gradient-shift absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd, #00d2d3, #ff6b6b)',
+          backgroundSize: '300% 100%',
+        }}
+      />
+
+      {/* Subtle overlay for text readability */}
+      <div className="absolute inset-0 bg-black/10 dark:bg-black/25" />
+
+      {/* Shimmer effect */}
+      <div
+        className="animate-shimmer pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
+          backgroundSize: '200% 100%',
+        }}
+      />
 
       <Marquee
         speed={40}
         gradient={false}
         pauseOnHover
-        className="py-2"
+        className="relative z-10 py-2"
         autoFill
       >
         {items.map((item, index) => (
@@ -28,10 +48,8 @@ const AlphaBanner = () => {
             key={index}
             className="mx-8 flex items-center gap-2 text-sm font-medium"
           >
-            <item.icon className="h-3.5 w-3.5 text-primary" />
-            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {item.text}
-            </span>
+            <item.icon className="h-3.5 w-3.5 text-white drop-shadow-sm" />
+            <span className="text-white drop-shadow-sm">{item.text}</span>
           </div>
         ))}
       </Marquee>
