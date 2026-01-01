@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { format } from 'date-fns';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -32,11 +33,10 @@ import {
   Link2Off,
   Plus,
   ShieldCheck,
-  ShieldAlert,
   KeyRound,
+  ExternalLink,
 } from 'lucide-react';
 import { VerifiedBadge } from './VerifiedBadge';
-import { useEncryption } from '@/context/EncryptionContext';
 import { cn } from '@/lib/utils';
 import { AddLinkDialog } from './AddLinkDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -110,110 +110,16 @@ export type LinkData = {
   securityStatus?: string;
 };
 
+import { DecryptedUrl } from './DecryptedUrl';
+
 function DecryptedUrlCell({ link }: { link: LinkData }) {
-  const { decrypt, isKeyUnlocked, isFetching } = useEncryption();
-  const [decryptedUrl, setDecryptedUrl] = React.useState<string | null>(null);
-  const [isDecrypting, setIsDecrypting] = React.useState(false);
-
-  React.useEffect(() => {
-    if (
-      link.isEncrypted &&
-      isKeyUnlocked &&
-      link.encryptedUrl &&
-      link.encryptionIv
-    ) {
-      const doDecrypt = async () => {
-        setIsDecrypting(true);
-        try {
-          const url = await decrypt({
-            ciphertext: link.encryptedUrl!,
-            iv: link.encryptionIv!,
-          });
-          setDecryptedUrl(url);
-        } catch (err) {
-          console.error('Decryption failed:', err);
-        } finally {
-          setIsDecrypting(false);
-        }
-      };
-      doDecrypt();
-    } else {
-      setDecryptedUrl(null);
-    }
-  }, [link, isKeyUnlocked, decrypt]);
-
-  if (!link.isEncrypted) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="max-w-[200px] cursor-help truncate text-sm text-muted-foreground md:max-w-[300px]">
-              {link.originalUrl}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[400px] break-all">
-            <p>{link.originalUrl}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  if (isFetching) {
-    return (
-      <div className="flex animate-pulse items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        <span>Loading...</span>
-      </div>
-    );
-  }
-
-  if (!isKeyUnlocked) {
-    return (
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-500 dark:hover:text-amber-400">
-        <ShieldAlert className="h-3 w-3" />
-        <span>Vault Locked</span>
-      </div>
-    );
-  }
-
-  if (isDecrypting) {
-    return (
-      <div className="flex animate-pulse items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        <span>Decrypting...</span>
-      </div>
-    );
-  }
-
-  if (decryptedUrl) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex max-w-[200px] cursor-help items-center gap-1.5 truncate text-sm font-medium text-green-600 transition-colors hover:text-green-700 dark:text-green-500 dark:hover:text-green-400 md:max-w-[300px]">
-              <ShieldCheck className="h-3 w-3 shrink-0" />
-              <span className="truncate">{decryptedUrl}</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[400px] break-all border-green-500/20 bg-background/95 backdrop-blur-sm">
-            <div className="space-y-1">
-              <p className="flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400">
-                <ShieldCheck className="h-3 w-3" /> End-to-End Encrypted
-              </p>
-              <p className="text-sm">{decryptedUrl}</p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive transition-colors hover:text-destructive/80">
-      <ShieldAlert className="h-3 w-3" />
-      <span>Decryption Failed</span>
-    </div>
+    <DecryptedUrl
+      isEncrypted={link.isEncrypted ?? false}
+      originalUrl={link.originalUrl}
+      encryptedUrl={link.encryptedUrl}
+      encryptionIv={link.encryptionIv}
+    />
   );
 }
 
@@ -307,6 +213,14 @@ export const columns: ColumnDef<LinkData>[] = [
     header: 'Short Link',
     cell: ({ row }) => {
       const id = row.getValue('shortened_id') as string;
+      const handleCopy = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${id}`;
+        navigator.clipboard.writeText(url);
+        toast.success('Copied to clipboard');
+      };
+
       return (
         <div className="flex items-center gap-2">
           <span className="truncate font-medium text-primary md:max-w-[120px]">
@@ -316,6 +230,22 @@ export const columns: ColumnDef<LinkData>[] = [
             isVerified={row.original.isVerified}
             securityStatus={row.original.securityStatus}
           />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground opacity-0 transition-all hover:bg-transparent hover:text-primary group-hover:opacity-100"
+                  onClick={handleCopy}
+                >
+                  <Copy className="h-4 w-4" />
+                  <span className="sr-only">Copy link</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy link</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       );
     },
@@ -488,12 +418,10 @@ export const columns: ColumnDef<LinkData>[] = [
       );
     },
     cell: ({ row }) => {
+      const date = new Date(row.getValue('createdAt'));
       return (
         <div className="whitespace-nowrap text-[10px] text-muted-foreground md:text-xs">
-          {new Date(row.getValue('createdAt')).toLocaleString(undefined, {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          })}
+          {format(date, 'MMM d, yyyy, h:mm a')}
         </div>
       );
     },
@@ -534,50 +462,6 @@ function LinkActionCell({ link }: { link: LinkData }) {
 
   return (
     <div className="flex items-center gap-1">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-primary"
-              onClick={() => {
-                const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${link.shortened_id}`;
-                navigator.clipboard.writeText(url);
-                toast.success('Copied to clipboard');
-              }}
-            >
-              <Copy className="h-4 w-4" />
-              <span className="sr-only">Copy link</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Copy link</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-primary"
-              asChild
-            >
-              <Link href={`/dashboard/my-links/${link.id}`}>
-                <Eye className="h-4 w-4" />
-                <span className="sr-only">View details</span>
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>View details</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -585,15 +469,35 @@ function LinkActionCell({ link }: { link: LinkData }) {
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[140px]">
+        <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem
+            asChild
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <a
+              href={`${typeof window !== 'undefined' ? window.location.origin : ''}/s/${link.shortened_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4" /> Visit
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <Link href={`/dashboard/my-links/${link.id}`}>
+              <Eye className="h-4 w-4" /> Details
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setIsEditDialogOpen(true)}
             className="flex cursor-pointer items-center gap-2"
           >
             <Pencil className="h-4 w-4" /> Edit
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
             onClick={() => setIsDeleteDialogOpen(true)}
@@ -940,7 +844,7 @@ export function LinksDataTable({ data }: { data: LinkData[] }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="border-muted/10 transition-colors hover:bg-muted/30"
+                  className="group border-muted/10 transition-colors hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3">

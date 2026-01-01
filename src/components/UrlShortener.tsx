@@ -169,7 +169,7 @@ export default function UrlShortener() {
                 required
                 disabled={isShortening}
                 className={cn(
-                  'h-12 pr-12 text-base transition-all',
+                  'h-12 pr-12 text-base transition-colors',
                   session?.user &&
                     (isFetching ||
                       (isEncryptionEnabled &&
@@ -202,7 +202,7 @@ export default function UrlShortener() {
                       : isEncryptionEnabled &&
                           isKeyUnlocked &&
                           !options.isPublic
-                        ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400'
+                        ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 dark:text-green-400'
                         : 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
                   )}
                   onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}

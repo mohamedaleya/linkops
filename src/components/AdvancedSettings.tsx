@@ -73,10 +73,12 @@ function PasswordSection({
 
   // Sync state if external removePassword changes
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (removePassword !== undefined) {
       if (removePassword) setIsEnabled(false);
       else if (hasExistingPassword) setIsEnabled(true);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [removePassword, hasExistingPassword]);
 
   const handleToggle = (checked: boolean) => {
@@ -258,7 +260,7 @@ export function AdvancedSettings({
                   </TooltipProvider>
                 </Label>
                 <Select value={redirectType} onValueChange={setRedirectType}>
-                  <SelectTrigger id="redirectType" className="h-9">
+                  <SelectTrigger id="redirectType" className="h-10">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>

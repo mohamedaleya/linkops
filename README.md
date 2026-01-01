@@ -24,6 +24,10 @@ LinkOps is a professional, high-performance URL management platform designed for
   - **Safety Warning**: Interstitial warning for potentially unsafe links.
   - **Expiration Dates**: Set links to automatically deactivate after a certain period.
   - **Enable/Disable**: Instantly toggle link availability without deleting.
+- **✉️ Email Verification**:
+  - **Account Verification**: Email-based verification for new user registrations.
+  - **Password Reset**: Secure password reset flow with token-based email verification.
+  - **SMTP Integration**: Reliable email delivery via Nodemailer.
 - **📄 Informational Pages**:
   - **Features**: Detailed overview of platform capabilities.
   - **Contact**: Direct line of communication for users.
@@ -32,6 +36,7 @@ LinkOps is a professional, high-performance URL management platform designed for
   - **Better-Auth Integration**: Secure authentication via credentials or OAuth (Google, GitHub).
   - **Advanced Profile Management**: Custom usernames, display names, and profile picture management with integrated cropping.
   - **Responsive & Dynamic UI**: Built with Shadcn UI, Framer Motion, and support for Dark Mode.
+  - **Cookie Consent**: GDPR-compliant cookie banner with customizable preferences.
 
 ## 🏗️ Architecture & Tech Stack
 
@@ -83,7 +88,7 @@ LinkOps is built with a focus on scalability, performance, and developer experie
 2. **Environment Configuration**:
    Create a `.env` file based on `.env.example`. Ensure you provide valid credentials for PostgreSQL, Redis, and Better-Auth.
 
-   > **Note**: For staging environment, use `.env.staging` and the `staging` branch.
+   > **Note**: For staging environment, use `.env.staging` and the `dev` branch.
 
 3. **Database Initialization**:
 
@@ -109,7 +114,7 @@ This builds the production image for `linux/amd64`, pushes it to GitHub Containe
 
 ### Staging Environment
 
-The project maintains a `dev` branch for staging. Pushes to this branch trigger a deployment to the staging environment, accessible via port `3071`.
+The project maintains a `dev` branch for staging. Pushes to this branch trigger a deployment to the staging environment.
 
 ## 🤝 Contributing
 

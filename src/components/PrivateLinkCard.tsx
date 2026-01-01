@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Link2,
   Clock,
@@ -8,77 +8,19 @@ import {
   MousePointer2,
   Edit2,
   ShieldCheck,
-  Lock,
-  Loader2,
 } from 'lucide-react';
 import { useEncryption } from '@/context/EncryptionContext';
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from '@/components/ui/item';
+import { Item, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { EditLinkDialog } from '@/components/EditLinkDialog';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { LinkData } from '@/components/LinksDataTable';
+import { DecryptedUrl } from './DecryptedUrl';
 
 export function PrivateLinkCard({ link }: { link: LinkData }) {
-  const { isKeyUnlocked, decrypt, isFetching } = useEncryption();
+  const {} = useEncryption();
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
-  const [isDecrypting, setIsDecrypting] = useState(false);
-
-  const isLocked = link.isEncrypted && !isFetching && !isKeyUnlocked;
-
-  // Decrypt the URL when vault is unlocked for encrypted links
-  useEffect(() => {
-    if (
-      link.isEncrypted &&
-      isKeyUnlocked &&
-      link.encryptedUrl &&
-      link.encryptionIv
-    ) {
-      const doDecrypt = async () => {
-        setIsDecrypting(true);
-        try {
-          const url = await decrypt({
-            ciphertext: link.encryptedUrl!,
-            iv: link.encryptionIv!,
-          });
-          setDecryptedUrl(url);
-        } catch (err) {
-          console.error('Decryption failed:', err);
-          setDecryptedUrl(null);
-        } finally {
-          setIsDecrypting(false);
-        }
-      };
-      doDecrypt();
-    } else if (!link.isEncrypted) {
-      setDecryptedUrl(link.originalUrl);
-    } else {
-      setDecryptedUrl(null);
-    }
-  }, [link, isKeyUnlocked, decrypt]);
-
-  // Get the display URL (decrypted for encrypted links, original for regular links)
-  const displayUrl = link.isEncrypted ? decryptedUrl : link.originalUrl;
-
-  let hostname = 'Link';
-  if (isFetching && link.isEncrypted) {
-    hostname = 'Loading...';
-  } else if (isDecrypting) {
-    hostname = 'Decrypting...';
-  } else if (isLocked) {
-    hostname = 'Locked';
-  } else if (displayUrl) {
-    try {
-      hostname = new URL(displayUrl).hostname.replace('www.', '');
-    } catch {}
-  }
 
   const href = `${process.env.NEXT_PUBLIC_URL || ''}/s/${link.shortened_id}`;
 
@@ -96,11 +38,8 @@ export function PrivateLinkCard({ link }: { link: LinkData }) {
       <ItemContent className="min-w-0">
         <div className="mb-1 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
-            <div
-              className="max-w-[120px] truncate whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
-              title={hostname}
-            >
-              {hostname}
+            <div className="max-w-[120px] truncate whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              {link.shortened_id}
             </div>
             <VerifiedBadge
               isVerified={link.isVerified}
@@ -125,35 +64,15 @@ export function PrivateLinkCard({ link }: { link: LinkData }) {
           </a>
         </ItemTitle>
 
-        <ItemDescription
-          className="mb-2 max-w-full truncate italic"
-          title={
-            isFetching && link.isEncrypted
-              ? 'Loading vault status...'
-              : isLocked
-                ? 'Unlock vault to view destination'
-                : displayUrl || ''
-          }
-        >
-          {isFetching && link.isEncrypted ? (
-            <span className="flex items-center gap-1.5 text-muted-foreground/50">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Loading vault status...</span>
-            </span>
-          ) : isDecrypting ? (
-            <span className="flex items-center gap-1.5 text-muted-foreground/50">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Decrypting...</span>
-            </span>
-          ) : isLocked ? (
-            <span className="flex items-center gap-1.5 text-muted-foreground/50">
-              <Lock className="h-3 w-3" />
-              <span>Unlock vault to view destination</span>
-            </span>
-          ) : (
-            displayUrl || 'Unknown URL'
-          )}
-        </ItemDescription>
+        <div className="mb-2 max-w-full truncate text-xs italic text-muted-foreground">
+          <DecryptedUrl
+            isEncrypted={link.isEncrypted ?? false}
+            originalUrl={link.originalUrl}
+            encryptedUrl={link.encryptedUrl}
+            encryptionIv={link.encryptionIv}
+            showTooltip={false}
+          />
+        </div>
 
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

@@ -11,7 +11,29 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
+  # Job 1: Lint and format check (runs in parallel with build)
+  lint-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check formatting
+        run: bunx prettier --check "src/**/*.{ts,tsx,js,jsx,css}"
+
+      - name: Run lint
+        run: bun run lint
+
+  # Job 2: Build and push Docker images (runs in parallel with lint)
+  build-images:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,21 +41,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check formatting
-        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css}"
-
-      - name: Run lint
-        run: npm run lint
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,9 +67,11 @@ jobs:
               echo "EOF"
             } >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_URL=${{ secrets.NEXT_PUBLIC_URL }}" >> $GITHUB_OUTPUT
+            echo "CRON_TAG=latest" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "TAGS=type=raw,value=staging" >> $GITHUB_OUTPUT
             echo "NEXT_PUBLIC_URL=https://staging.linkops.at" >> $GITHUB_OUTPUT
+            echo "CRON_TAG=staging" >> $GITHUB_OUTPUT
           fi
 
       - name: Extract metadata for Docker
@@ -72,7 +81,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: ${{ steps.meta-config.outputs.TAGS }}
 
-      - name: Build and push Docker image
+      # Build main app image
+      - name: Build and push App image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -85,8 +95,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Build cron image (avoids building on VPS)
+      - name: Build and push Cron image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./cron
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cron:${{ steps.meta-config.outputs.CRON_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 3: Deploy to VPS (waits for both lint and build)
   deploy-to-vps:
-    needs: build-and-push
+    needs: [lint-and-check, build-images]
     runs-on: ubuntu-latest
     env:
       FULL_IMAGE_NAME: ghcr.io/${{ github.repository }}
@@ -99,45 +121,36 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_OUTPUT
-            echo "REMOTE_COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_OUTPUT
             echo "ENV_FILE=.env.prod" >> $GITHUB_OUTPUT
             echo "TAG=latest" >> $GITHUB_OUTPUT
+            echo "WEB_CONTAINER=linkops-web" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "COMPOSE_FILE=docker-compose.staging.yml" >> $GITHUB_OUTPUT
-            echo "REMOTE_COMPOSE_FILE=docker-compose.staging.yml" >> $GITHUB_OUTPUT
             echo "ENV_FILE=.env.staging" >> $GITHUB_OUTPUT
             echo "TAG=staging" >> $GITHUB_OUTPUT
+            echo "WEB_CONTAINER=linkops-staging-web" >> $GITHUB_OUTPUT
           fi
 
       - name: Create Env File
+        env:
+          PROD_ENV: ${{ secrets.PRODUCTION_ENV }}
+          STAGE_ENV: ${{ secrets.STAGING_ENV }}
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "${{ secrets.PRODUCTION_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+            echo "$PROD_ENV" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            echo "${{ secrets.STAGING_ENV }}" > ${{ steps.deploy-config.outputs.ENV_FILE }}
+            echo "$STAGE_ENV" > ${{ steps.deploy-config.outputs.ENV_FILE }}
           fi
 
-      - name: Copy Config and Env to VPS
+      - name: Copy Config, Env, and Scripts to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }}"
+          source: "${{ steps.deploy-config.outputs.COMPOSE_FILE }},${{ steps.deploy-config.outputs.ENV_FILE }},scripts/"
           target: "~/linkops/"
           strip_components: 0
-
-      - name: Rename/Prepare docker-compose on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            # Ensure correct naming on remote if different
-            if [ "${{ steps.deploy-config.outputs.COMPOSE_FILE }}" != "${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }}" ]; then
-              mv ~/linkops/${{ steps.deploy-config.outputs.COMPOSE_FILE }} ~/linkops/${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} 2>/dev/null || true
-            fi
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -151,14 +164,32 @@ jobs:
 
             cd ~/linkops
 
-            # Pull the new image
-            docker pull ghcr.io/${{ github.repository }}:${{ steps.deploy-config.outputs.TAG }}
+            # Make init script executable
+            chmod +x scripts/init-db.sh
 
-            # Restart containers
-            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up -d --force-recreate
+            # Pull the new images
+            docker pull ghcr.io/${{ github.repository }}:${{ steps.deploy-config.outputs.TAG }}
+            docker pull ghcr.io/${{ github.repository }}-cron:${{ steps.deploy-config.outputs.TAG }}
+
+            # Run database provisioning (idempotent - safe to run every time)
+            docker compose -f ${{ steps.deploy-config.outputs.COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up db_provision
+
+            # Start all containers (no --build needed, images are pre-built)
+            docker compose -f ${{ steps.deploy-config.outputs.COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} up -d --force-recreate web redis cron
+
+            # Wait for web container to be ready (healthcheck)
+            echo "Waiting for web container to be healthy..."
+            for i in {1..15}; do
+              if docker exec ${{ steps.deploy-config.outputs.WEB_CONTAINER }} curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+                echo "Web container is healthy!"
+                break
+              fi
+              echo "Waiting... ($i/15)"
+              sleep 1
+            done
 
             # Run database migrations
-            docker compose -f ${{ steps.deploy-config.outputs.REMOTE_COMPOSE_FILE }} --env-file ${{ steps.deploy-config.outputs.ENV_FILE }} exec -T web npx prisma@6.19.0 migrate deploy
+            docker exec -t ${{ steps.deploy-config.outputs.WEB_CONTAINER }} bunx --bun prisma@6.19.0 migrate deploy
 
             # Clean up old images
             docker image prune -f

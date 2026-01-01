@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
-  LinkIcon,
   Mail,
   Lock,
   UserPlus,
@@ -74,8 +73,8 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        toast.success('Account created successfully!');
-        router.push('/dashboard');
+        toast.success('Account created successfully! Please check your email.');
+        router.push(`/verify-email/check?email=${encodeURIComponent(email)}`);
         router.refresh();
       } else {
         const data = await res.json();
@@ -105,11 +104,6 @@ export default function RegisterPage() {
     <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
         <CardHeader className="space-y-1 text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-xl bg-primary p-2.5 text-primary-foreground shadow-lg shadow-primary/20">
-              <LinkIcon className="h-6 w-6" />
-            </div>
-          </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
             Create an account
           </CardTitle>
@@ -133,7 +127,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                    className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -150,7 +144,7 @@ export default function RegisterPage() {
                     onChange={(e) => setLastName(e.target.value)}
                     required
                     disabled={isLoading || isOAuthLoading !== null}
-                    className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                    className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                   />
                 </div>
               </div>
@@ -169,7 +163,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 focus:border-primary focus:ring-primary/40"
                 />
               </div>
             </div>
@@ -188,7 +182,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"
@@ -224,7 +218,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={isLoading || isOAuthLoading !== null}
-                  className="h-11 border-muted-foreground/20 pl-10 pr-10 transition-all focus:border-primary focus:ring-primary/40"
+                  className="h-11 border-muted-foreground/20 pl-10 pr-10 focus:border-primary focus:ring-primary/40"
                 />
                 <button
                   type="button"

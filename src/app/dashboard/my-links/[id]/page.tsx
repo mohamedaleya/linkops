@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LinkStatsChart } from '@/components/LinkStatsChart';
-import { ReferrerChart } from '@/components/ReferrerChart';
-import { GeoChart } from '@/components/GeoChart';
+import {
+  DynamicLinkStatsChart,
+  DynamicReferrerChart,
+  DynamicGeoChart,
+} from '@/components/DynamicCharts';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Button } from '@/components/ui/button';
 import {
@@ -83,6 +85,8 @@ async function getLinkWithStats(id: string, days: number = 30) {
   };
 }
 
+import { DecryptedUrl } from '@/components/DecryptedUrl';
+
 export default async function LinkDetailsPage({
   params,
   searchParams,
@@ -114,16 +118,15 @@ export default async function LinkDetailsPage({
                 E2E Encrypted
               </div>
             ) : null}
-            <p className="flex items-center gap-2 text-sm italic text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm italic text-muted-foreground">
               <Target className="h-3.5 w-3.5" />
-              {link.isEncrypted ? (
-                <span className="text-xs text-muted-foreground/60">
-                  Unlock vault to view destination
-                </span>
-              ) : (
-                link.originalUrl
-              )}
-            </p>
+              <DecryptedUrl
+                isEncrypted={link.isEncrypted ?? false}
+                originalUrl={link.originalUrl}
+                encryptedUrl={link.encryptedUrl}
+                encryptionIv={link.encryptionIv}
+              />
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-4">
@@ -199,11 +202,11 @@ export default async function LinkDetailsPage({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <LinkStatsChart data={link.clicksDaily} />
+          <DynamicLinkStatsChart data={link.clicksDaily} />
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <ReferrerChart data={link.referrersDaily} />
-            <GeoChart data={link.geoDaily} />
+            <DynamicReferrerChart data={link.referrersDaily} />
+            <DynamicGeoChart data={link.geoDaily} />
           </div>
         </div>
         <div className="space-y-6">

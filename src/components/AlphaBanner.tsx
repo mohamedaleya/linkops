@@ -5,10 +5,10 @@ import { Sparkles, Rocket, AlertTriangle, Construction } from 'lucide-react';
 
 const AlphaBanner = () => {
   const items = [
-    { icon: Sparkles, text: 'Alpha Version' },
-    { icon: AlertTriangle, text: 'Features may change' },
-    { icon: Rocket, text: 'New features coming soon' },
-    { icon: Construction, text: 'Work in progress' },
+    { icon: Sparkles, text: "You're exploring LinkOps Alpha!" },
+    { icon: AlertTriangle, text: 'Expect some rough edges' },
+    { icon: Rocket, text: 'Help us shape the future of link management' },
+    { icon: Construction, text: 'Your feedback matters' },
   ];
 
   return (

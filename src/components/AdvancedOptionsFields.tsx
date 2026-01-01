@@ -97,7 +97,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
           <Input
             id="slug"
             placeholder="e.g. summer-sale"
-            className="h-9 text-sm"
+            className="h-10 text-sm"
             value={options.customSlug}
             onChange={(e) => updateOption('customSlug', e.target.value)}
           />
@@ -157,7 +157,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
             value={options.redirectType}
             onValueChange={(v: string) => updateOption('redirectType', v)}
           >
-            <SelectTrigger id="redirectType" className="h-9 text-sm">
+            <SelectTrigger id="redirectType" className="h-10 text-sm">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -182,7 +182,7 @@ export default function AdvancedOptionsFields({ options, setOptions }: Props) {
               name="link-protection-password"
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              className="h-9 pr-10 text-sm"
+              className="h-10 pr-10 text-sm"
               value={options.password}
               onChange={(e) => updateOption('password', e.target.value)}
               autoComplete="off"

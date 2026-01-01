@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import {
-  LinkIcon,
   LogOut,
   User as UserIcon,
   Home,
@@ -13,6 +12,7 @@ import {
   Lock,
   Menu,
 } from 'lucide-react';
+import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/button';
 import { useSession, signOut } from '@/lib/auth-client';
@@ -67,12 +67,9 @@ const Header = () => {
         {/* Logo - Left */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-xl font-bold tracking-tight transition-opacity hover:opacity-90"
+          className="flex items-center transition-opacity hover:opacity-90"
         >
-          <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
-            <LinkIcon className="h-5 w-5" />
-          </div>
-          <span>LinkOps</span>
+          <Logo className="h-8 w-auto text-xl" />
         </Link>
 
         {/* Navigation Menu - Centered (Desktop) */}
@@ -281,6 +278,11 @@ const Header = () => {
                           <p className="text-xs leading-none text-muted-foreground">
                             {session.user.email}
                           </p>
+                          {!session.user.emailVerified && (
+                            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                              Email not verified
+                            </span>
+                          )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -347,11 +349,8 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[350px]">
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-left">
-                  <div className="logo-gradient rounded-lg p-1.5 text-primary-foreground">
-                    <LinkIcon className="h-4 w-4" />
-                  </div>
-                  LinkOps
+                <SheetTitle className="flex items-center text-left">
+                  <Logo className="h-6 w-auto" />
                 </SheetTitle>
               </SheetHeader>
               <nav className="mt-8 flex h-[calc(100vh-8rem)] flex-col gap-4">

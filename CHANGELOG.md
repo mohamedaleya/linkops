@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.2] - 2025-12-31 - Email Verification & Polish
+
+- **Email Verification System**: Complete email verification flow for new user registrations.
+  - Verification emails sent via SMTP (Nodemailer integration).
+  - Dedicated verification pages with token handling.
+  - Verification banner prompting unverified users to confirm their email.
+- **Password Reset Flow**: Full forgot/reset password functionality.
+  - Request password reset via email.
+  - Secure token-based password reset page.
+  - Beautifully designed email templates.
+- **Alpha Banner**: Eye-catching marquee banner indicating the app is in alpha stage.
+- **Improved Logo**: New reusable SVG logo component with theme support.
+- **Cookie Consent**: GDPR-compliant cookie consent banner.
+
+### Infrastructure & DevOps
+
+- **Docker Optimizations**: Reduced Docker image size and improved build times.
+- **CI/CD Improvements**:
+  - Explicit project naming for staging/production isolation.
+  - Fixed database provisioning scripts.
+  - Improved migration reliability with health checks.
+- **Environment Isolation**: Staging and production now run on completely separate Docker networks and databases.
+
+### Bug Fixes & Polish
+
+- **Focus Ring Fix**: Eliminated white flash on input focus across all components.
+- **Session Stability**: Prevented unnecessary session refreshes on window focus changes.
+- **Improved Skeleton Loading**: Better loading states for session-dependent UI elements.
+
 ## [0.1.0-alpha.1] - 2025-12-30 - Security & Feature Update
 
 - **Unified Dashboard**: Renamed `/links` to `/dashboard` and integrated real-time analytics directly above your link list for at-a-glance insights.

@@ -13,8 +13,48 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, url }) {
-      console.log(`Reset password link for ${user.email}: ${url}`);
-      // In production, send an actual email here.
+      const { sendEmail } = await import('./email/client');
+      const { getResetPasswordEmailHtml } =
+        await import('./email/templates/reset-password');
+
+      // Replace /api/auth with /auth for cleaner user-facing URLs
+      const publicUrl = url.replace('/api/auth/', '/auth/');
+      const html = getResetPasswordEmailHtml(
+        publicUrl,
+        user.name || user.email
+      );
+
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your password - LinkOps',
+        html,
+        text: `Reset your password by visiting this link: ${publicUrl}`,
+      });
+
+      console.log(`Reset password email sent to ${user.email}`);
+    },
+    requireEmailVerification: false,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      const { sendEmail } = await import('./email/client');
+      const { getVerificationEmailHtml } =
+        await import('./email/templates/verification');
+
+      // Replace /api/auth with /auth for cleaner user-facing URLs
+      const publicUrl = url.replace('/api/auth/', '/auth/');
+      const html = getVerificationEmailHtml(publicUrl, user.name || user.email);
+
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify your email - LinkOps',
+        html,
+        text: `Verify your email by visiting this link: ${publicUrl}`,
+      });
+
+      console.log(`Verification email sent to ${user.email}`);
     },
   },
   socialProviders: {
