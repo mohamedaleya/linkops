@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM oven/bun:1-alpine AS base
 
 FROM base AS deps
@@ -7,8 +8,9 @@ WORKDIR /app
 COPY package.json bun.lockb* ./
 COPY prisma ./prisma/
 
-
-RUN bun install --frozen-lockfile
+# Use BuildKit cache mount for faster dependency installs
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 FROM oven/bun:1.3.2-alpine AS builder
 WORKDIR /app
@@ -20,8 +22,11 @@ RUN bunx --bun prisma generate
 # Build argument for NEXT_PUBLIC_URL (baked into client bundle at build time)
 ARG NEXT_PUBLIC_URL
 ENV NEXT_PUBLIC_URL=$NEXT_PUBLIC_URL
+ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN bun run build
+# Use BuildKit cache mount for Next.js build cache
+RUN --mount=type=cache,target=/app/.next/cache \
+    bun run build
 
 
 

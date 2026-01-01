@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
@@ -18,33 +18,33 @@ import { CheckCircle2, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 export default function EmailVerifiedSuccessPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const [showContent, setShowContent] = useState(false);
 
+  // Determine if we should show the success content
+  const isVerified = !isPending && session?.user?.emailVerified;
+
+  // Handle redirects based on session state
   useEffect(() => {
-    // If user is already verified and didn't just come from verification flow,
-    // redirect them to dashboard after a brief delay
-    if (!isPending) {
-      if (session?.user?.emailVerified) {
-        // Show the success message briefly, then redirect
-        setShowContent(true);
-        const timer = setTimeout(() => {
-          router.replace('/dashboard');
-        }, 3000); // 3 second delay to show success message
-        return () => clearTimeout(timer);
-      } else if (!session?.user) {
-        // Not logged in, redirect to login
-        router.replace('/login');
-      } else {
-        // Logged in but not verified - they shouldn't be on this page
-        router.replace(
-          '/verify-email/check?email=' + encodeURIComponent(session.user.email)
-        );
-      }
+    if (isPending) return;
+
+    if (session?.user?.emailVerified) {
+      // Redirect to dashboard after a brief delay to show success message
+      const timer = setTimeout(() => {
+        router.replace('/dashboard');
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else if (!session?.user) {
+      // Not logged in, redirect to login
+      router.replace('/login');
+    } else {
+      // Logged in but not verified - they shouldn't be on this page
+      router.replace(
+        '/verify-email/check?email=' + encodeURIComponent(session.user.email)
+      );
     }
   }, [session, isPending, router]);
 
-  // Show loading state while checking session
-  if (isPending || !showContent) {
+  // Show loading state while checking session or redirecting
+  if (isPending || !isVerified) {
     return (
       <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "test": "jest",
     "lint": "eslint .",
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.22.5",
+    "@next/bundle-analyzer": "^16.1.1",
     "@playwright/test": "^1.49.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -90,6 +92,10 @@
     "whatwg-fetch": "^3.6.20"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx,js,jsx,css}": "prettier --write"
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.css": "prettier --write"
   }
 }
