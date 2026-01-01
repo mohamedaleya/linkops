@@ -62,25 +62,20 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/sign-up/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `${firstName} ${lastName}`.trim(),
-          email,
-          password,
-        }),
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name: `${firstName} ${lastName}`.trim(),
+        callbackURL: `/verify-email/check?email=${encodeURIComponent(email)}`,
       });
 
-      if (res.ok) {
+      if (!error) {
         toast.success('Account created successfully! Please check your email.');
-        // Refresh session to update UI state
-        await authClient.getSession();
-        router.refresh(); // Update server components
+        // router.push is handled by better-auth if callbackURL is provided or can be explicit
+        router.refresh();
         router.push(`/verify-email/check?email=${encodeURIComponent(email)}`);
       } else {
-        const data = await res.json();
-        toast.error(data.message || 'Failed to create account');
+        toast.error(error.message || 'Failed to create account');
       }
     } catch {
       toast.error('An unexpected error occurred');
