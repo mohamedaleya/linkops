@@ -20,6 +20,7 @@ interface StatItem {
   color: string;
   bgColor: string;
   description: string;
+  isDecimal?: boolean;
 }
 
 const stats: StatItem[] = [
@@ -79,7 +80,15 @@ const stats: StatItem[] = [
   },
 ];
 
-function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
+function AnimatedCounter({
+  value,
+  suffix,
+  isDecimal = false,
+}: {
+  value: number;
+  suffix: string;
+  isDecimal?: boolean;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   const [displayValue, setDisplayValue] = useState(0);
@@ -91,7 +100,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   });
 
   const rounded = useTransform(spring, (latest) => {
-    if (value < 100) {
+    if (isDecimal) {
       return latest.toFixed(1);
     }
     return Math.round(latest).toLocaleString();
@@ -111,7 +120,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   }, [rounded]);
 
   const formatValue = () => {
-    if (value < 100) {
+    if (isDecimal) {
       return displayValue.toFixed(1);
     }
     return Math.round(displayValue).toLocaleString();
@@ -150,6 +159,87 @@ const item = {
 };
 
 export default function Statistics() {
+  const [statsData, setStatsData] = useState<Record<string, number> | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) {
+          const data = await res.json();
+          setStatsData(data);
+        }
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const dynamicStats: StatItem[] = [
+    {
+      label: 'Links Created',
+      value: statsData?.linksCreated ?? 0,
+      suffix: '+',
+      icon: Link2,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500/10',
+      description: 'Short links generated',
+    },
+    {
+      label: 'Total Clicks',
+      value: statsData?.totalClicks ?? 0,
+      suffix: '+',
+      icon: MousePointerClick,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+      description: 'Redirects processed',
+    },
+    {
+      label: 'Countries',
+      value: 180,
+      suffix: '+',
+      icon: Globe2,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
+      description: 'Worldwide reach',
+    },
+    {
+      label: 'Active Users',
+      value: statsData?.activeUsers ?? 0,
+      suffix: '+',
+      icon: Users,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+      description: 'Growing community',
+    },
+    {
+      label: 'Uptime',
+      value: 99.9,
+      suffix: '%',
+      icon: TrendingUp,
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-500/10',
+      description: 'Reliable service',
+      isDecimal: true,
+    },
+    {
+      label: 'Threats Blocked',
+      value: 50000,
+      suffix: '+',
+      icon: Shield,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10',
+      description: 'Security protected',
+    },
+  ];
+
   return (
     <section className="relative overflow-hidden py-20">
       {/* Background Gradient */}
@@ -197,50 +287,66 @@ export default function Statistics() {
           viewport={{ once: true }}
           className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-6"
         >
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              variants={item}
-              className="group relative overflow-hidden rounded-2xl border bg-card/50 p-6 text-center backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-lg"
-            >
-              {/* Hover Glow Effect */}
-              <div
-                className={cn(
-                  'absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100',
-                  stat.bgColor
-                )}
-                style={{ opacity: 0.05 }}
-              />
-
-              <div className="relative z-10">
+          {loading
+            ? // Skeleton loading state
+              Array.from({ length: 6 }).map((_, i) => (
                 <div
-                  className={cn(
-                    'mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border bg-background shadow-sm transition-transform group-hover:scale-110',
-                    stat.bgColor
-                  )}
+                  key={i}
+                  className="h-40 rounded-2xl border bg-card/50 p-6 backdrop-blur-sm"
                 >
-                  <stat.icon className={cn('h-5 w-5', stat.color)} />
+                  <div className="mx-auto mb-4 h-12 w-12 animate-pulse rounded-xl bg-muted" />
+                  <div className="mx-auto mb-2 h-8 w-20 animate-pulse rounded bg-muted" />
+                  <div className="mx-auto h-4 w-16 animate-pulse rounded bg-muted" />
                 </div>
-
-                <div
-                  className={cn(
-                    'mb-1 text-2xl font-bold tracking-tight md:text-3xl',
-                    stat.color
-                  )}
+              ))
+            : dynamicStats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  variants={item}
+                  className="group relative overflow-hidden rounded-2xl border bg-card/50 p-6 text-center backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                </div>
+                  {/* Hover Glow Effect */}
+                  <div
+                    className={cn(
+                      'absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100',
+                      stat.bgColor
+                    )}
+                    style={{ opacity: 0.05 }}
+                  />
 
-                <div className="text-sm font-medium text-foreground">
-                  {stat.label}
-                </div>
+                  <div className="relative z-10">
+                    <div
+                      className={cn(
+                        'mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border bg-background shadow-sm transition-transform group-hover:scale-110',
+                        stat.bgColor
+                      )}
+                    >
+                      <stat.icon className={cn('h-5 w-5', stat.color)} />
+                    </div>
 
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {stat.description}
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                    <div
+                      className={cn(
+                        'mb-1 text-2xl font-bold tracking-tight md:text-3xl',
+                        stat.color
+                      )}
+                    >
+                      <AnimatedCounter
+                        value={stat.value}
+                        suffix={stat.suffix}
+                        isDecimal={stat.isDecimal}
+                      />
+                    </div>
+
+                    <div className="text-sm font-medium text-foreground">
+                      {stat.label}
+                    </div>
+
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {stat.description}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
         </motion.div>
 
         {/* Bottom CTA */}
