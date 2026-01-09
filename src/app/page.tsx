@@ -43,9 +43,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trust Indicators / Features */}
-      <Features />
-
       {/* Recent Activity Section */}
       <section className="container mx-auto max-w-6xl px-4">
         <div className="space-y-8">
@@ -71,6 +68,9 @@ export default async function Home() {
           </Suspense>
         </div>
       </section>
+
+      {/* Trust Indicators / Features */}
+      <Features />
 
       {/* Platform Statistics */}
       <Statistics />

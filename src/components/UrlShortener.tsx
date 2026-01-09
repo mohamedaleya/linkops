@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import {
   BadgeCheckIcon,
   ShieldAlert,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdvancedOptionsFields from './AdvancedOptionsFields';
@@ -43,6 +44,16 @@ export default function UrlShortener() {
   const { data: session, isPending } = useSession();
   const { isEncryptionEnabled, isKeyUnlocked, encrypt, isFetching } =
     useEncryption();
+
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+  useEffect(() => {
+    const tipCount = 4; // Max tips across authenticated/guest
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % tipCount);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [options, setOptions] = useState({
     customSlug: '',
@@ -142,7 +153,7 @@ export default function UrlShortener() {
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border-none bg-card/80 shadow-2xl ring-1 ring-border backdrop-blur-xl">
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-4 !pb-2 md:p-6">
           <form
             onSubmit={handleSubmit}
             className="flex flex-col gap-3 md:flex-row"
@@ -286,31 +297,75 @@ export default function UrlShortener() {
                 </div>
               </motion.div>
             )}
-            {isPending ? (
-              <div className="mt-4 flex justify-center">
-                <Skeleton className="h-4 w-64" />
-              </div>
-            ) : (
-              !session?.user && (
-                <motion.p
-                  key="login-prompt"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 text-center text-xs text-muted-foreground"
-                >
-                  Sign in to enable 🔒{' '}
-                  <span className="font-semibold text-foreground">
-                    End-to-End Encryption
-                  </span>{' '}
-                  and advanced link management.
-                </motion.p>
-              )
+            {/* Animated Tips */}
+            {!shortenedId && (
+              <motion.div
+                key="tips"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="pt-2"
+              >
+                {isPending ? (
+                  <div className="flex justify-center">
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[2.5rem] items-center justify-center overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={currentTipIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full text-center text-xs leading-tight text-muted-foreground"
+                      >
+                        {session?.user ? (
+                          <>
+                            Tip:{' '}
+                            {
+                              TIPS_AUTHENTICATED[
+                                currentTipIndex % TIPS_AUTHENTICATED.length
+                              ]
+                            }
+                          </>
+                        ) : currentTipIndex === 0 ? (
+                          <>
+                            Tip: Sign in to enable 🔒{' '}
+                            <span className="font-semibold text-foreground">
+                              End-to-End Encryption
+                            </span>{' '}
+                            and advanced link management.
+                          </>
+                        ) : (
+                          <>
+                            Tip:{' '}
+                            {
+                              TIPS_GUEST[
+                                (currentTipIndex - 1) % TIPS_GUEST.length
+                              ]
+                            }
+                          </>
+                        )}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
 
           {shortenedId && (
             <div className="mt-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex flex-col items-center justify-center space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
+              <div className="relative flex flex-col items-center justify-center space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShortenedId('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 ring-8 ring-primary/10">
                   <BadgeCheckIcon className="h-8 w-8 text-primary" />
                 </div>
@@ -390,17 +445,19 @@ export default function UrlShortener() {
           )}
         </CardContent>
       </Card>
-
-      {!shortenedId &&
-        (isPending ? (
-          <div className="flex justify-center">
-            <Skeleton className="h-4 w-80" />
-          </div>
-        ) : (
-          <p className="animate-slow-fade text-center text-xs text-muted-foreground">
-            Tip: Click the gear icon to set a custom slug or expiration date.
-          </p>
-        ))}
     </div>
   );
 }
+
+const TIPS_GUEST: string[] = [
+  'Click the gear icon to set a custom slug.',
+  'Create an account to track detailed analytics.',
+  'You can password protect your links for extra security.',
+];
+
+const TIPS_AUTHENTICATED: string[] = [
+  'Click the gear icon to set a custom slug.',
+  'Use End-to-End encryption for sensitive data.',
+  'You can password protect your links.',
+  'Toggle the public switch to share in community.',
+];

@@ -4,6 +4,89 @@ import type { ShortLink } from '@prisma/client';
 
 const CACHE_TTL = 300; // 5 minutes in seconds
 const LINK_CACHE_PREFIX = 'link:';
+const STATS_CACHE_KEY = 'stats:platform';
+
+export interface PlatformStats {
+  linksCreated: number;
+  totalClicks: number;
+  activeUsers: number;
+  countriesReached: number;
+  threatsBlocked: number;
+}
+
+/**
+ * Get platform statistics (cached)
+ */
+export async function getPlatformStats(): Promise<PlatformStats> {
+  try {
+    const cached = await redis.get(STATS_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    // Calculate stats from DB
+    const [
+      linksCreated,
+      {
+        _sum: { visits: totalClicks },
+      },
+      activeUsers,
+      unsafeLinks,
+      // We'll estimate countries since counting distinct on a large table is expensive
+      // For now, let's query the daily geo table for distinct countries in the last 30 days
+      distinctCountries,
+    ] = await Promise.all([
+      prisma.shortLink.count(),
+      prisma.shortLink.aggregate({
+        _sum: {
+          visits: true,
+        },
+      }),
+      prisma.user.count(),
+      prisma.shortLink.count({
+        where: { securityStatus: 'unsafe' },
+      }),
+      prisma.linkGeoDaily.findMany({
+        distinct: ['country'],
+        select: { country: true },
+      }),
+    ]);
+
+    const stats: PlatformStats = {
+      linksCreated,
+      totalClicks: totalClicks || 0,
+      activeUsers,
+      threatsBlocked: unsafeLinks,
+      countriesReached: distinctCountries.length || 1, // At least 1 (unknown)
+    };
+
+    // Cache the result
+    await redis.setex(STATS_CACHE_KEY, CACHE_TTL, JSON.stringify(stats));
+
+    return stats;
+  } catch (error) {
+    console.error('Failed to fetch platform stats:', error);
+    // Return fallback "safe" stats if DB fails
+    return {
+      linksCreated: 0,
+      totalClicks: 0,
+      activeUsers: 0,
+      countriesReached: 0,
+      threatsBlocked: 0,
+    };
+  }
+}
+
+/**
+ * Invalidate platform stats cache
+ */
+export async function invalidatePlatformStats(): Promise<void> {
+  try {
+    await redis.del(STATS_CACHE_KEY);
+  } catch (error) {
+    console.error('Failed to invalidate platform stats:', error);
+  }
+}
 
 /**
  * Get a link from cache or database (cache-aside pattern)
