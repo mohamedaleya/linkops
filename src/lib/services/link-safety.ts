@@ -43,6 +43,43 @@ const BLOCKED_SHORTENER_HOSTS = [
   'clck.ru',
   'short.io',
   'tinyurl.is',
+  // Redirect / dynamic-QR services seen abused on linkops.at
+  'rdrlink.top',
+  'qrcodeveloper.com',
+  'linkr.bio',
+];
+
+/**
+ * Free dynamic-DNS and tunnel domains. Anyone can get a subdomain in seconds,
+ * which makes them a favourite for throwaway phishing pages. The link that
+ * got linkops.at flagged pointed at a FreeDNS (afraid.org) subdomain.
+ */
+const FREE_HOSTING_DOMAINS = [
+  // FreeDNS / afraid.org shared domains (most common ones)
+  'twilightparadox.com',
+  'mooo.com',
+  'chickenkiller.com',
+  'strangled.net',
+  'crabdance.com',
+  'jumpingcrab.com',
+  'ignorelist.com',
+  'us.to',
+  // Other dynamic DNS providers
+  'duckdns.org',
+  'ddns.net',
+  'hopto.org',
+  'zapto.org',
+  'sytes.net',
+  'no-ip.org',
+  'no-ip.biz',
+  'serveo.net',
+  'dynu.net',
+  // Tunnels
+  'ngrok.io',
+  'ngrok-free.app',
+  'ngrok.app',
+  'trycloudflare.com',
+  'loca.lt',
 ];
 
 /** File types commonly used to deliver malware. */
@@ -132,6 +169,10 @@ export function checkUrlHeuristics(url: string): string | null {
 
   if (BLOCKED_SHORTENER_HOSTS.some((d) => matchesHost(hostname, d))) {
     return 'Links to other URL shorteners are not allowed';
+  }
+
+  if (FREE_HOSTING_DOMAINS.some((d) => matchesHost(hostname, d))) {
+    return 'Links to free dynamic-DNS or tunnel domains are not allowed';
   }
 
   if (DANGEROUS_EXTENSIONS.test(urlObj.pathname)) {

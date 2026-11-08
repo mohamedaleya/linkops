@@ -27,6 +27,11 @@ describe('checkUrlHeuristics', () => {
     ['https://bit.ly/abc', 'shorteners'],
     ['https://sub.tinyurl.com/x', 'shorteners'],
     ['https://linkops.at/s/abc', 'LinkOps'],
+    // Real abusive links found in production (Nov 2026)
+    ['https://hefinity.twilightparadox.com/?verify', 'dynamic-DNS'],
+    ['https://rdrlink.top/alicesunbeam', 'shorteners'],
+    ['https://qrcodeveloper.com/code/PKve9lp9IsrYsk-h', 'shorteners'],
+    ['https://abc.trycloudflare.com/login', 'tunnel'],
     ['https://example.com/setup.exe', 'executable'],
     ['https://example.com/app.apk', 'executable'],
     ['https://www.pornhub.com/', 'Adult'],
