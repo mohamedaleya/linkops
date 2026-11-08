@@ -44,7 +44,12 @@ export async function POST(request: Request) {
   const safeBrowsing = isSafeBrowsingConfigured();
 
   const links = await prisma.shortLink.findMany({
-    where: { isEncrypted: false, originalUrl: { not: '' } },
+    // Manually blocked links are final: never re-evaluate (and never clear) them
+    where: {
+      isEncrypted: false,
+      originalUrl: { not: '' },
+      securityLocked: false,
+    },
     orderBy: { lastSecurityCheckAt: { sort: 'asc', nulls: 'first' } },
     take: batchSize,
     select: {

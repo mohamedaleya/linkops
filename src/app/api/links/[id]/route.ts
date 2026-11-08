@@ -66,6 +66,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Manually blocked links can't be edited back into service (changing the
+    // URL would otherwise reset the security status). Deleting still works.
+    if (existingLink.securityLocked) {
+      return NextResponse.json(
+        { error: 'This link has been blocked for abuse and cannot be edited' },
+        { status: 403 }
+      );
+    }
+
     const {
       isEnabled,
       originalUrl,

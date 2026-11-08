@@ -32,6 +32,7 @@ model ShortLink {
   securityStatus String  @default("unknown") // "secure", "unsafe", "unknown"
   securityReason      String? // Why the link was flagged, if it was
   lastSecurityCheckAt DateTime? // Last time the background rescan checked it
+  securityLocked      Boolean   @default(false) // Manually blocked: rescans and edits can't clear it
 
   clicksDaily    LinkClickDaily[]
   geoDaily       LinkGeoDaily[]
