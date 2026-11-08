@@ -1,2 +1,4 @@
 # Run analytics worker every minute
 * * * * * curl -s -X POST -H "Authorization: Bearer ${ANALYTICS_WORKER_SECRET}" http://${WEB_HOST:-web}:3000/api/process-analytics >> /var/log/cron.log 2>&1
+# Re-check stored links against Google Safe Browsing every 15 minutes
+*/15 * * * * curl -s -X POST -H "Authorization: Bearer ${ANALYTICS_WORKER_SECRET}" "http://${WEB_HOST:-web}:3000/api/security/rescan?limit=1000" >> /var/log/cron.log 2>&1

@@ -1,19 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { invalidateLinks } from '@/lib/cache';
+
+/**
+ * Resolve the subset of `ids` owned by the signed-in user.
+ *
+ * These endpoints previously had no authentication at all: anyone could
+ * disable or delete any user's links by ID.
+ */
+async function ownedLinks(ids: unknown) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  if (
+    !Array.isArray(ids) ||
+    ids.length === 0 ||
+    !ids.every((id) => typeof id === 'string')
+  ) {
+    return {
+      error: NextResponse.json(
+        { error: 'No link IDs provided' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  const links = await prisma.shortLink.findMany({
+    where: { id: { in: ids as string[] }, userId: session.user.id },
+    select: { id: true, shortened_id: true },
+  });
+
+  return { links };
+}
 
 // PATCH /api/links/bulk - Bulk update links
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { ids, isEnabled } = body;
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json(
-        { error: 'No link IDs provided' },
-        { status: 400 }
-      );
-    }
+    const { ids, isEnabled } = await request.json();
 
     if (typeof isEnabled !== 'boolean') {
       return NextResponse.json(
@@ -22,19 +51,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Fetch shortened_ids for cache invalidation
-    const linksToInvalidate = await prisma.shortLink.findMany({
-      where: { id: { in: ids } },
-      select: { shortened_id: true },
-    });
+    const owned = await ownedLinks(ids);
+    if (owned.error) return owned.error;
 
+    const ownedIds = owned.links.map((l) => l.id);
     const result = await prisma.shortLink.updateMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ownedIds } },
       data: { isEnabled },
     });
 
-    // Invalidate cache for all affected links
-    await invalidateLinks(linksToInvalidate.map((l) => l.shortened_id));
+    await invalidateLinks(owned.links.map((l) => l.shortened_id));
 
     return NextResponse.json({
       success: true,
@@ -53,40 +79,29 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/links/bulk - Bulk delete links
 export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { ids } = body;
+    const { ids } = await request.json();
 
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json(
-        { error: 'No link IDs provided' },
-        { status: 400 }
-      );
-    }
+    const owned = await ownedLinks(ids);
+    if (owned.error) return owned.error;
 
-    // Fetch shortened_ids for cache invalidation before deleting
-    const linksToInvalidate = await prisma.shortLink.findMany({
-      where: { id: { in: ids } },
-      select: { shortened_id: true },
-    });
+    const ownedIds = owned.links.map((l) => l.id);
 
     // Delete related analytics data first
     await prisma.linkClickDaily.deleteMany({
-      where: { linkId: { in: ids } },
+      where: { linkId: { in: ownedIds } },
     });
     await prisma.linkReferrerDaily.deleteMany({
-      where: { linkId: { in: ids } },
+      where: { linkId: { in: ownedIds } },
     });
     await prisma.linkGeoDaily.deleteMany({
-      where: { linkId: { in: ids } },
+      where: { linkId: { in: ownedIds } },
     });
 
-    // Delete the links
     const result = await prisma.shortLink.deleteMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ownedIds } },
     });
 
-    // Invalidate cache for all deleted links
-    await invalidateLinks(linksToInvalidate.map((l) => l.shortened_id));
+    await invalidateLinks(owned.links.map((l) => l.shortened_id));
 
     return NextResponse.json({
       success: true,

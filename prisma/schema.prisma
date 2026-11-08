@@ -30,12 +30,15 @@ model ShortLink {
   // Security and Verification
   isVerified     Boolean @default(false)
   securityStatus String  @default("unknown") // "secure", "unsafe", "unknown"
+  securityReason      String? // Why the link was flagged, if it was
+  lastSecurityCheckAt DateTime? // Last time the background rescan checked it
 
   clicksDaily    LinkClickDaily[]
   geoDaily       LinkGeoDaily[]
   referrersDaily LinkReferrerDaily[]
   user           User?               @relation(fields: [userId], references: [id])
 
+  @@index([lastSecurityCheckAt])
   @@map("short_link")
 }
 

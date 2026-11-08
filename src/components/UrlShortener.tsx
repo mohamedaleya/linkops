@@ -100,6 +100,10 @@ export default function UrlShortener() {
 
       if (!response.ok) {
         toast.error(data.error || 'Failed to shorten URL');
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
         if (response.status === 409 && data.shortened_id) {
           setShortenedId(data.shortened_id);
         }

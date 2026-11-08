@@ -6,35 +6,65 @@ import { rateLimit } from '@/lib/rate-limiter';
 import bcrypt from 'bcryptjs';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { checkLinkSafety } from '@/lib/services/link-safety';
+import { checkLinkSafety, validateSlug } from '@/lib/services/link-safety';
+import { getClientIp } from '@/lib/request-ip';
+
+function tooManyRequests(limit: number, remaining: number, reset: number) {
+  return NextResponse.json(
+    { error: 'Too many requests. Please try again later.' },
+    {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': reset.toString(),
+        'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
+      },
+    }
+  );
+}
 
 export async function POST(request: Request) {
+  // Rate limiting: 10 requests per minute per IP
+  const ip = getClientIp(request);
+  const ipLimit = await rateLimit(`shorten:${ip}`, 10, 60000);
+  if (!ipLimit.success) {
+    return tooManyRequests(ipLimit.limit, ipLimit.remaining, ipLimit.reset);
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  // Rate limiting: 10 requests per minute per IP
-  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-  const rateLimitKey = `shorten:${ip}`;
-  const { success, limit, remaining, reset } = await rateLimit(
-    rateLimitKey,
-    10,
-    60000
-  );
-
-  if (!success) {
+  // Anonymous link creation was the main abuse vector (phishing links got
+  // linkops.at flagged by Google Safe Browsing). Require an account so abusers
+  // can be identified and banned.
+  if (!session?.user) {
     return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': reset.toString(),
-          'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
-        },
-      }
+      { error: 'Please sign in to create short links.' },
+      { status: 401 }
     );
+  }
+
+  // Per-account limit: 100 links per hour
+  const userLimit = await rateLimit(
+    `shorten:user:${session.user.id}`,
+    100,
+    60 * 60 * 1000
+  );
+  if (!userLimit.success) {
+    return tooManyRequests(
+      userLimit.limit,
+      userLimit.remaining,
+      userLimit.reset
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
   const {
@@ -49,23 +79,43 @@ export async function POST(request: Request) {
     utmMedium,
     utmCampaign,
     isPublic,
-  } = await request.json();
+  } = body as {
+    url?: string;
+    encryptedUrl?: string;
+    encryptionIv?: string;
+    customSlug?: string;
+    expiresAt?: string;
+    password?: string;
+    redirectType?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    isPublic?: boolean;
+  };
 
-  // Determine if it's public (password protected links are forced private)
+  // Password protected links are forced private
   const finalIsPublic = !!password ? false : !!isPublic;
 
-  // For encrypted links, we don't need the plaintext URL
   // Public links cannot be E2E encrypted
-  const isEncryptedLink = !!(
-    encryptedUrl &&
-    encryptionIv &&
-    session?.user &&
-    !finalIsPublic
-  );
+  const isEncryptedLink = !!(encryptedUrl && encryptionIv && !finalIsPublic);
 
-  // Require either plaintext URL or encrypted URL
   if (!url && !isEncryptedLink) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+  }
+
+  const slug = typeof customSlug === 'string' ? customSlug.trim() : '';
+  if (slug) {
+    const slugError = validateSlug(slug);
+    if (slugError) {
+      return NextResponse.json({ error: slugError }, { status: 400 });
+    }
+  }
+
+  if (redirectType && !['301', '302', '307', '308'].includes(redirectType)) {
+    return NextResponse.json(
+      { error: 'Invalid redirect type' },
+      { status: 400 }
+    );
   }
 
   // Construct original URL with UTM params if present (only for non-encrypted links)
@@ -78,29 +128,32 @@ export async function POST(request: Request) {
       if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
       finalOriginalUrl = urlObj.toString();
     } catch {
-      // Keep original if URL parsing fails (unlikely due to front-end validation)
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
   }
 
-  // Safety check
-  const { isVerified, securityStatus, isHarmful } =
-    await checkLinkSafety(finalOriginalUrl);
+  // Safety check: harmful links are rejected outright (previously they were
+  // stored and still redirected via ?bypass=true or /go/<id>).
+  // Encrypted links can't be checked server-side; they are private-only and
+  // tied to an account.
+  const safety = isEncryptedLink
+    ? null
+    : await checkLinkSafety(finalOriginalUrl);
 
-  // If harmful, force private
-  let effectiveIsPublic = finalIsPublic;
-  let safetyWarning = null;
-
-  if (isHarmful && effectiveIsPublic) {
-    effectiveIsPublic = false;
-    safetyWarning =
-      'This link has been flagged as potentially harmful and has been set to Private for your safety.';
+  if (safety?.isHarmful) {
+    console.warn(
+      `[link-safety] Blocked link creation by user ${session.user.id}: ${safety.reason}`
+    );
+    return NextResponse.json(
+      { error: safety.reason || 'This link was flagged as unsafe' },
+      { status: 422 }
+    );
   }
 
   try {
-    const shortened_id = customSlug?.trim() || nanoid(6);
+    const shortened_id = slug || nanoid(6);
 
-    // Check for custom slug conflict
-    if (customSlug) {
+    if (slug) {
       const existingSlug = await prisma.shortLink.findUnique({
         where: { shortened_id },
       });
@@ -112,11 +165,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check for duplicate URLs (only for non-encrypted, simple links)
-    if (!isEncryptedLink && !customSlug && !expiresAt && !password) {
+    // Reuse an identical simple link owned by the same user
+    if (!isEncryptedLink && !slug && !expiresAt && !password) {
       const existingLink = await prisma.shortLink.findFirst({
         where: {
           originalUrl: finalOriginalUrl,
+          userId: session.user.id,
           expiresAt: null,
           passwordHash: null,
           isEncrypted: false,
@@ -136,7 +190,6 @@ export async function POST(request: Request) {
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
-    // Create the short link with encryption data if provided
     const shortLink = await prisma.shortLink.create({
       data: {
         originalUrl: isEncryptedLink ? '' : finalOriginalUrl,
@@ -145,15 +198,17 @@ export async function POST(request: Request) {
         isEnabled: true,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         passwordHash: hashedPassword,
-        userId: session?.user.id || null,
-        isPublic: effectiveIsPublic,
+        userId: session.user.id,
+        isPublic: finalIsPublic,
         // E2E Encryption fields
         encryptedUrl: isEncryptedLink ? encryptedUrl : null,
         encryptionIv: isEncryptedLink ? encryptionIv : null,
         isEncrypted: isEncryptedLink,
         // Security fields
-        isVerified,
-        securityStatus,
+        isVerified: safety?.isVerified ?? false,
+        securityStatus: safety?.securityStatus ?? 'unknown',
+        securityReason: safety?.reason ?? null,
+        lastSecurityCheckAt: safety ? new Date() : null,
       },
     });
 
@@ -163,7 +218,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       shortened_id: shortLink.shortened_id,
       isEncrypted: shortLink.isEncrypted,
-      safetyWarning,
+      safetyWarning: null,
     });
   } catch (error) {
     console.error('Error creating short link:', error);

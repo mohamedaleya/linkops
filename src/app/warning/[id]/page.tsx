@@ -55,5 +55,5 @@ export default async function WarningPage({ params }: Props) {
     }
   } catch {}
 
-  return <SafetyWarning shortenedId={id} hostname={hostname} />;
+  return <SafetyWarning hostname={hostname} reason={link.securityReason} />;
 }

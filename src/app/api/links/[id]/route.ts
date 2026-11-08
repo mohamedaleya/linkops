@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { invalidateLink } from '@/lib/cache';
+import { checkLinkSafety, validateSlug } from '@/lib/services/link-safety';
 
 export async function GET(
   request: Request,
@@ -77,8 +78,12 @@ export async function PATCH(
       shortened_id,
     } = await request.json();
 
-    // If shortened_id is being changed, check for conflicts
+    // If shortened_id is being changed, validate it and check for conflicts
     if (shortened_id && shortened_id !== existingLink.shortened_id) {
+      const slugError = validateSlug(shortened_id);
+      if (slugError) {
+        return NextResponse.json({ error: slugError }, { status: 400 });
+      }
       const existingSlug = await prisma.shortLink.findUnique({
         where: { shortened_id },
       });
@@ -89,6 +94,45 @@ export async function PATCH(
         );
       }
     }
+
+    if (redirectType && !['301', '302', '307', '308'].includes(redirectType)) {
+      return NextResponse.json(
+        { error: 'Invalid redirect type' },
+        { status: 400 }
+      );
+    }
+
+    // Re-check the destination when it changes. Previously a user could
+    // create a link to a harmless site and then edit it to point at a
+    // phishing page with no check at all.
+    let securityData = {};
+    if (
+      typeof originalUrl === 'string' &&
+      originalUrl &&
+      originalUrl !== existingLink.originalUrl
+    ) {
+      const safety = await checkLinkSafety(originalUrl);
+      if (safety.isHarmful) {
+        console.warn(
+          `[link-safety] Blocked link edit by user ${session.user.id}: ${safety.reason}`
+        );
+        return NextResponse.json(
+          { error: safety.reason || 'This link was flagged as unsafe' },
+          { status: 422 }
+        );
+      }
+      securityData = {
+        securityStatus: safety.securityStatus,
+        isVerified: safety.isVerified,
+        securityReason: null,
+        lastSecurityCheckAt: new Date(),
+      };
+    }
+
+    // A link that is currently flagged can't be made public
+    const flagged =
+      existingLink.securityStatus === 'unsafe' &&
+      Object.keys(securityData).length === 0;
 
     let passwordHash = undefined;
     if (password !== undefined) {
@@ -112,8 +156,10 @@ export async function PATCH(
           isEncrypted: !!encryptedUrl,
         }),
         ...(encryptionIv !== undefined && { encryptionIv }),
+        ...securityData,
         ...(isPublic !== undefined && {
           isPublic:
+            flagged ||
             (passwordHash !== undefined
               ? !!passwordHash
               : !!existingLink.passwordHash) ||

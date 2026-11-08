@@ -18,6 +18,8 @@ async function getRecentPublicLinks(): Promise<ShortLink[]> {
         isPublic: true,
         isEnabled: true,
         passwordHash: null,
+        // Never advertise flagged links on the homepage
+        securityStatus: { not: 'unsafe' },
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       orderBy: { createdAt: 'desc' },

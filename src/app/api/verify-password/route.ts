@@ -2,6 +2,12 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limiter';
+import { getClientIp } from '@/lib/request-ip';
+import {
+  LINK_ACCESS_TTL_SECONDS,
+  createLinkAccessToken,
+  linkAccessCookieName,
+} from '@/lib/link-access';
 
 export async function POST(request: Request) {
   const { shortened_id, password } = await request.json();
@@ -14,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   // Rate limiting for password attempts: 5 per minute per IP
-  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const ip = getClientIp(request);
   const rateLimitKey = `verify-password:${ip}:${shortened_id}`;
   const { success } = await rateLimit(rateLimitKey, 5, 60000);
 
@@ -40,18 +46,22 @@ export async function POST(request: Request) {
     const isMatch = await bcrypt.compare(password, link.passwordHash);
 
     if (isMatch) {
-      const response = NextResponse.json({
-        success: true,
-        url: link.originalUrl,
-      });
+      // Don't return the destination: the client goes through /s/<id>, so
+      // the unsafe/disabled/expired checks in the redirect handler still apply.
+      const response = NextResponse.json({ success: true });
 
-      // Set a session cookie (simplified for Phase 2, in Phase 3 Better Auth will handle sessions)
-      response.cookies.set(`verified_${shortened_id}`, 'true', {
-        path: '/',
-        maxAge: 3600, // 1 hour
-        httpOnly: true,
-        sameSite: 'lax',
-      });
+      // Signed access cookie (cannot be forged by setting it by hand)
+      response.cookies.set(
+        linkAccessCookieName(link.shortened_id),
+        createLinkAccessToken(link.shortened_id, link.passwordHash),
+        {
+          path: '/',
+          maxAge: LINK_ACCESS_TTL_SECONDS,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        }
+      );
 
       return response;
     } else {
